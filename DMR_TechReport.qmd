@@ -1,0 +1,1729 @@
+---
+title: "DMR_TechReport"
+format: html
+editor: visual
+---
+
+# Organize Data
+
+## Clear the Space
+
+```{r}
+#| code-fold: true 
+rm(list=ls())
+```
+
+## Call Packages
+
+```{r}
+#| code-fold: true
+#| collapse: true
+library(tidyverse) 
+library(vtable) 
+library(dplyr) 
+library(patchwork) 
+library(fBasics) 
+library(ggthemes)
+library(lubridate)
+library(likert)
+library(miscTools)
+library(tseries)
+library(astsa)
+library(urca)
+library(uroot)
+library(forecast)
+library(vars)
+library(scales)
+library(gmRi)
+library(ggtext)
+library(readxl)
+```
+
+## Data
+
+```{r}
+#| code-fold: true
+#| collapse: true
+setwd("C:/Users/BenCotton/Desktop/dmr_data")
+portdata <- read_csv("portdata.csv")
+stormdata <- read_csv("stormdata.csv")
+stormdata_filtered <- read_csv("stormdata2.csv")
+
+# World Uncertainty Index 
+uncertaintyindex <- read_csv("world_uncertainty_index.csv")
+
+# Soft-Shell Clam Data
+portdataSS <- portdata[portdata$COMMON_NAME %in% "clam soft",]
+stormdataSS <- stormdata[stormdata$COMMON_NAME %in% "clam soft",]
+
+# Oyster Data 
+portdataEO <- portdata[portdata$COMMON_NAME %in% "oyster eastern / american",]
+
+# Quahog Data 
+portdataNQ <- portdata[portdata$COMMON_NAME %in% "clam northern quahog / hard",]
+
+# GMRI Colors
+gmri_colors <- c(
+`seafood purple`     = "#773891",
+`midnight blue`      = "#363b45",
+`dark blue`          = "#004966",
+`gmri blue`          = "#00608a",
+`ecosystems cyan`    = "#07a3b7",
+`blue economy teal`  = "#057872",
+`moss green`         = "#38431d",
+`warm yellow`        = "#ebcb27",
+`lv orange`          = "#ea4f12",
+`climate change red` = "#b94a40",
+`light gray`         = "#E9E9E9",
+`dark gray`          = "#535353")
+
+```
+
+# Figure 3: Regional Map of Maine
+
+```{r}
+library(sf)
+library(rnaturalearthdata)
+library(tigris)
+
+# Get Maine counties with names and geometry
+maine_counties <- counties(state = "ME", cb = TRUE)
+
+# Create your region lookup table
+county_region <- data.frame(
+  NAME = c("Cumberland", "York", "Sagadahoc", "Lincoln", "Knox", "Waldo", "Hancock", "Washington", "Other Counties..."),
+  Region = c("Southern", "Southern", "Midcoast", "Midcoast", "Midcoast", "Midcoast", "Downeast", "Downeast", "Other"))
+
+# Join and filter out counties with no Region
+maine_counties <- left_join(maine_counties, county_region, by = "NAME") %>%
+  filter(!is.na(Region))
+
+# Get full state outline
+maine_state <- states(cb = TRUE) %>% filter(STUSPS == "ME")
+
+# Regional Map of Maine for Tech Report
+Regional_Figure <- ggplot() +
+  geom_sf(data = maine_state, fill = NA, color = "black", size = 10) +
+  geom_sf(data = maine_counties, aes(fill = Region, color = Region), size = 10) +
+  geom_segment(x = -70.5, y = 44.6, xend = -69.9, yend = 43.9, color = "black", size = 10) +
+  geom_segment(x = -69.8, y = 44.9, xend = -69.0, yend = 44.1, color = "black", size = 10) +
+  annotate("text",
+         x = -69.5, y = 45.3, 
+         label = "Maine",
+         size = 8,
+         fontface = "italic",
+         color = "#535353") +
+  scale_size_continuous(
+    range = c(2, 12),
+    labels = function(x) {
+      paste0(round(x / 1e6), " Million")}) +
+  scale_fill_manual(
+  values = c(
+    "Southern" = "#f08b6e",
+    "Midcoast" = "#66a3b2",
+    "Downeast" = "#7a8657")) +
+  scale_color_manual(
+    values = c(
+      "Southern" = "#ea4f12",
+      "Midcoast" = "#004966",
+      "Downeast" = "#38431d")) +
+  coord_sf(xlim = c(-66, -73), ylim = c(43, 47.5), expand = FALSE) +
+  theme_gmri(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    plot.subtitle = element_text(size = 18),
+    plot.title = element_text(size = 24, face = "bold"),
+    plot.margin = margin(t = 5, r = 5, b = 5, l = 5),
+    legend.title = element_text(size = 22),            
+    legend.text = element_text(size = 20),
+    strip.text = element_text(size = 20, face = "bold"),
+    panel.grid.major = element_line(color = "#e9e9e9"),
+    panel.border = element_rect(color = "black", linetype = 1, size = 0.5),
+    legend.position = "bottom") +
+  guides(color = guide_legend(override.aes = list(size = 4))) +
+  labs(x = NULL, y = NULL,
+       size = "Total Pounds",
+       color = "Region")
+
+Regional_Figure
+
+setwd("C:/Users/BenCotton/Desktop")
+#ggsave("Region_Map.png", plot = Regional_Figure, width = 12, height = 10, units = "in", dpi = 300, bg = "white")
+
+```
+
+# Fisheries Overview 
+
+## Figure 5: Soft-Shell Landings and Value: 2006-2023
+
+```{r}
+totalpoundshisto <- portdataSS %>% 
+  group_by(Year) %>% 
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+totalvalueline <- portdataSS %>% 
+  group_by(Year) %>% 
+  dplyr::summarize(total_value = sum(VALUE, na.rm = TRUE))
+
+legend_colors <- c("Total Pounds" = gmri_cols("gmri blue"),
+                   "Total Value" = "#ea4f12")
+
+# Join by Year
+combined_data <- totalpoundshisto %>%
+  left_join(totalvalueline, by = "Year")
+
+# Plot without Legend but Colored Title 
+landings_value_SS <- ggplot(combined_data, aes(x = Year)) +
+  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
+  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
+  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
+  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
+  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
+  scale_y_continuous(
+    name = "Total Pounds (Millions)",
+    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
+  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
+  labs(title = "State of Maine Soft-Shell <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
+    x = "Year") +
+  theme_minimal() +
+  theme(plot.title = ggtext::element_markdown(size = 14),
+  legend.position = c(0.15, 0.85),
+  legend.background = element_blank(),
+  legend.box.background = element_blank(),
+  legend.key = element_blank(),
+  legend.text = element_text(size = 8))
+
+landings_value_SS 
+
+#ggsave(filename = "landings_value_SS.jpeg", plot = landings_value_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+```
+
+## Figure 10: Northern Quahog Landings and Value: 2006-2023
+
+```{r}
+# Group by Region
+portdataNQ_downeast <- portdataNQ %>% 
+  filter(Region == "Downeast",
+         Year > 2009) %>% 
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE),
+            avg_pounds = mean(total_pounds, na.rm = TRUE))
+
+portdataNQ_region <- portdataNQ %>%
+  filter(Region != "NA", Year > 2009) %>%
+  group_by(Region) %>%
+  dplyr::summarise(total_pounds = sum(POUNDS, na.rm = TRUE),
+    .groups = 'drop') %>%
+  mutate(percent_of_total = (total_pounds / sum(total_pounds)) * 100)
+
+portdataEO_region <- portdataEO %>% 
+  group_by(Year) %>% 
+  dplyr::summarize(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+
+
+totalpoundshisto_NQ <- portdataNQ %>% 
+  group_by(Year) %>% 
+  dplyr::summarise(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+totalvalueline_NQ <- portdataNQ %>% 
+  group_by(Year) %>% 
+  dplyr::summarize(total_value = sum(VALUE, na.rm = TRUE))
+
+# Join by Year
+combined_data_NQ <- totalpoundshisto_NQ %>%
+  left_join(totalvalueline_NQ, by = "Year")
+
+# Plot without Legend but Colored Title 
+landings_value_NQ <- ggplot(combined_data_NQ, aes(x = Year)) +
+  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
+  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
+  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
+  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
+  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
+  scale_y_continuous(
+    name = "Total Pounds (Millions)",
+    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
+  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
+  labs(title = "State of Maine Northern Quahog <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
+    x = "Year") +
+  theme_minimal() +
+  theme(plot.title = ggtext::element_markdown(size = 14),
+  legend.position = c(0.15, 0.85),
+  legend.background = element_blank(),
+  legend.box.background = element_blank(),
+  legend.key = element_blank(),
+  legend.text = element_text(size = 8))
+
+landings_value_NQ
+
+#ggsave(filename = "landings_value_NQ.jpeg", plot = landings_value_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
+```
+
+## Figure 11: Eastern Oyster Landings and Value: 2006-2023
+
+```{r}
+totalpoundshisto_EO <- portdataEO %>% 
+  group_by(Year) %>% 
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+totalvalueline_EO <- portdataEO %>% 
+  group_by(Year) %>% 
+  dplyr::summarize(total_value = sum(VALUE, na.rm = TRUE))
+
+# Join by Year
+combined_data_EO <- totalpoundshisto_EO %>%
+  left_join(totalvalueline_EO, by = "Year")
+
+# Plot without Legend but Colored Title 
+landings_value_EO <- ggplot(combined_data_EO, aes(x = Year)) +
+  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
+  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
+  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
+  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
+  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
+  scale_y_continuous(
+    name = "Total Pounds (Millions)",
+    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
+  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
+  labs(title = "State of Maine Eastern Oyster <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
+    x = "Year") +
+  theme_minimal() +
+  theme(plot.title = ggtext::element_markdown(size = 14),
+  legend.position = c(0.15, 0.85),
+  legend.background = element_blank(),
+  legend.box.background = element_blank(),
+  legend.key = element_blank(),
+  legend.text = element_text(size = 8))
+
+landings_value_EO
+
+#ggsave(filename = "landings_value_EO.jpeg", plot = landings_value_EO, device = "jpeg", width = 6, height = 4, dpi = 300)
+```
+# FPI Calculations
+## FPI-Measures Prices
+
+```{r}
+portdataSSDec2023 <- portdataSS %>% 
+  dplyr::select(Dates,POUNDS, PRICEPERPOUND) %>% 
+  group_by(month = lubridate::floor_date(Dates, 'month')) %>%
+  dplyr::select(-Dates)
+
+portdataSSDec2023 <- portdataSSDec2023 %>% 
+  filter(month == "2023-12-01") %>% 
+  dplyr::summarize(total_pounds = sum(POUNDS, na.rm = TRUE),
+                   mean_PPP = mean(PRICEPERPOUND, na.rm = TRUE)) # 2.53
+
+# 2024 Yearly FPI Prices 
+setwd("C:/Users/BenCotton/Desktop")
+publicdata <- read_csv("dmr_public_landings.csv")
+
+publicdataSS <- publicdata[publicdata$species %in% "Clam Soft",]
+
+FPI_2024 <- publicdataSS %>% 
+  filter(year == 2024) %>% 
+  summarise(total_pounds = sum(weight, na.rm = TRUE),
+            mean_PPP = mean(value/weight, na.rm = TRUE))
+
+```
+
+## Create Monthly FPI for Soft-Shell Clams
+
+```{r}
+# Manual Monthly Price Indexes
+# Format to Year-Month
+portdataSS$year_month <- format(portdataSS$Dates, "%Y-%m")
+
+STMonthFPI <- portdataSS %>% 
+  drop_na(PRICEPERPOUND) %>% 
+  group_by(year_month,PORT_NAME) %>% 
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE),
+            mean_PPP = mean(PRICEPERPOUND, na.rm = TRUE))
+
+base_month <- STMonthFPI %>% 
+  filter(year_month == "2023-12") %>% 
+  dplyr::rename(total_pounds_base = total_pounds,
+         mean_PPP_base = mean_PPP) %>% 
+  ungroup() %>% 
+  dplyr::select(2:4)
+
+STMonthFPI <- STMonthFPI  %>% 
+  left_join(., base_month) %>%
+  mutate(pq0 = mean_PPP*total_pounds_base) %>% 
+  mutate(p0q0 = mean_PPP_base*total_pounds_base) %>% 
+  mutate(pq = mean_PPP*total_pounds) %>% 
+  mutate(p0q = mean_PPP_base*total_pounds) %>% 
+  group_by(year_month) %>% 
+  summarise(agg_pq0 = sum(pq0, na.rm = TRUE),
+            agg_p0q0 = sum(p0q0, na.rm = TRUE),
+            agg_pq = sum(pq, na.rm = TRUE),
+            agg_p0q = sum(p0q, na.rm = TRUE)) %>% 
+            mutate(LPI = agg_pq0/agg_p0q0) %>% 
+            mutate(PPI = agg_pq/agg_p0q) %>% 
+            mutate(ManualFPI = sqrt(LPI*PPI))
+
+STMonthFPI <- STMonthFPI %>% 
+  mutate(fpiprice = ManualFPI*2.53)
+```
+# Merge FPI-adjusted Prices into portdataSS
+
+```{r}
+fpiadjust <- STMonthFPI %>% 
+  dplyr::select(year_month, fpiprice)
+
+portdataSS <- portdataSS %>% 
+  left_join(fpiadjust, by = "year_month")
+
+```
+
+# Figure 6: Plot Pounds with Prices (FPI-adj December 2023): 2023
+
+```{r}
+STMonthSoftShell2023 <- portdataSS %>% 
+  drop_na(fpiprice) %>% 
+  filter(year(Dates) == 2023) %>%
+  mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
+  group_by(Month) %>%
+  summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
+    total_pounds = sum(POUNDS, na.rm = TRUE), 
+    n = n()) %>%
+  arrange(match(Month, month.abb))
+
+range_prices <- range(STMonthSoftShell2023$mean_PPP, na.rm = TRUE)
+range_pounds <- range(STMonthSoftShell2023$total_pounds, na.rm = TRUE)
+scaling_factor <- max(range_pounds) / max(range_prices)  # Align max values
+
+PPPMonthScaledPounds2023 <- ggplot(STMonthSoftShell2023, aes(x = Month)) + 
+  geom_bar(aes(y = total_pounds / scaling_factor), stat = "identity", fill = "#00608a") +
+  geom_line(aes(y = mean_PPP), group = 1, color = "#ea4f12", size = 0.75) +
+  geom_point(aes(y = mean_PPP), color = "#ea4f12", size = 2) +
+  scale_y_continuous(name = "Mean Price per Pound \n(2023 FPI-adjusted)",
+    sec.axis = sec_axis(~ . * scaling_factor, name = "Total Pounds Harvested", labels = comma)) +
+  #ggtitle("2023 Monthly Soft-Shell Landings and Mean Price") +
+  xlab("2023") +
+  theme_minimal() +
+  theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
+    axis.title.y.right = element_text(face = "bold", color = "#00608a"),
+    axis.title.x = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    plot.title = element_text(face = "bold"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank())
+
+PPPMonthScaledPounds2023
+
+#ggsave(filename = "PPPMonthScaledPounds2023.jpeg", plot = PPPMonthScaledPounds2023, device = "jpeg", width = 6, height = 4, dpi = 300)
+```
+
+# Figure 7: Plot Pounds with Prices (FPI-adj December 2023): 2021
+
+```{r}
+STMonthSoftShell2021 <- portdataSS %>% 
+  drop_na(fpiprice) %>% 
+  filter(year(Dates) == 2021) %>%
+  mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
+  group_by(Month) %>%
+  summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
+    total_pounds = sum(POUNDS, na.rm = TRUE), 
+    n = n()) %>%
+  arrange(match(Month, month.abb))
+
+range_prices <- range(STMonthSoftShell2021$mean_PPP, na.rm = TRUE)
+range_pounds <- range(STMonthSoftShell2021$total_pounds, na.rm = TRUE)
+scaling_factor <- max(range_pounds) / max(range_prices)  # Align max values
+
+PPPMonthScaledPounds2021 <- ggplot(STMonthSoftShell2021, aes(x = Month)) + 
+  geom_bar(aes(y = total_pounds / scaling_factor), stat = "identity", fill = "#00608a") +
+  geom_line(aes(y = mean_PPP), group = 1, color = "#ea4f12", size = 0.75) +
+  geom_point(aes(y = mean_PPP), color = "#ea4f12", size = 2) +
+  scale_y_continuous(name = "Mean Price per Pound \n(2023 FPI-adjusted)",
+    sec.axis = sec_axis(~ . * scaling_factor, name = "Total Pounds Harvested", labels = comma)) +
+  #ggtitle("2021 Monthly Soft-Shell Landings and Mean Price") +
+  xlab("2021") +
+  theme_minimal() +
+  theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
+    axis.title.y.right = element_text(face = "bold", color = "#00608a"),
+    axis.title.x = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    plot.title = element_text(face = "bold"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank())
+
+PPPMonthScaledPounds2021
+
+#ggsave(filename = "PPPMonthScaledPounds2021.jpeg", plot = PPPMonthScaledPounds2021, device = "jpeg", width = 6, height = 4, dpi = 300)
+```
+
+# Figure 8: Plot Pounds with Prices (FPI-adj December 2023): 2015
+
+```{r}
+STMonthSoftShell2015 <- portdataSS %>% 
+  drop_na(fpiprice) %>% 
+  filter(year(Dates) == 2015) %>%
+  mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
+  group_by(Month) %>%
+  summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
+    total_pounds = sum(POUNDS, na.rm = TRUE), 
+    n = n()) %>%
+  arrange(match(Month, month.abb))
+
+range_prices <- range(STMonthSoftShell2015$mean_PPP, na.rm = TRUE)
+range_pounds <- range(STMonthSoftShell2015$total_pounds, na.rm = TRUE)
+scaling_factor <- max(range_pounds) / max(range_prices)  # Align max values
+
+PPPMonthScaledPounds2015 <- ggplot(STMonthSoftShell2015, aes(x = Month)) + 
+  geom_bar(aes(y = total_pounds / scaling_factor), stat = "identity", fill = "#00608a") +
+  geom_line(aes(y = mean_PPP), group = 1, color = "#ea4f12", size = 0.75) +
+  geom_point(aes(y = mean_PPP), color = "#ea4f12", size = 2) +
+  scale_y_continuous(name = "Mean Price per Pound \n(2023 FPI-adjusted)",
+    sec.axis = sec_axis(~ . * scaling_factor, name = "Total Pounds Harvested", labels = comma)) +
+  #ggtitle("2015 Monthly Soft-Shell Landings and Mean Price") +
+  xlab("2015") +
+  theme_minimal() +
+  theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
+    axis.title.y.right = element_text(face = "bold", color = "#00608a"),
+    axis.title.x = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    plot.title = element_text(face = "bold"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank())
+
+PPPMonthScaledPounds2015
+
+#ggsave(filename = "PPPMonthScaledPounds2015.jpeg", plot = PPPMonthScaledPounds2015, device = "jpeg", width = 6, height = 4, dpi = 300)
+```
+
+# Figure 9: Create a Percentage Difference in Total Pounds Year-Over-Year
+
+```{r}
+total_pounds_year_percentage <- portdataSS %>%
+  group_by(Year) %>%
+  summarise(total_year_pounds = sum(POUNDS, na.rm = TRUE)) %>%
+  mutate(percent_change = round((total_year_pounds - lag(total_year_pounds)) / lag(total_year_pounds) * 100, 1))
+
+# Convert the Year column to Date format (using the first day of each year)
+total_pounds_year_percentage$Year <- as.Date(paste(total_pounds_year_percentage$Year, "-01-01", sep = ""), format = "%Y-%m-%d")
+
+year_over_year <- ggplot(total_pounds_year_percentage, aes(x = Year, y = percent_change)) +
+  geom_bar(stat = "identity", fill = "#07a3b7") +
+  geom_text(aes(label = ifelse(!is.na(percent_change), paste0(percent_change, "%"), "")),
+            size = 3, 
+            vjust = ifelse(total_pounds_year_percentage$percent_change >= 0, -0.5, 1.5),
+            color = "black") +
+  scale_x_date(
+    breaks = as.Date(c("2006-01-01", "2008-01-01","2010-01-01", "2012-01-01","2014-01-01","2016-01-01", "2018-01-01","2020-01-01", "2022-01-01")),
+    labels = c("2006","2008","2010","2012","2014","2016", "2018","2020","2022")) + 
+  labs(x = "Year",
+    y = "Percentage Change (%)") +
+  theme_minimal(base_size = 12) +
+  theme(text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(face = "bold", color = "black"),
+    plot.title = element_text(face = "bold", color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank())
+
+year_over_year
+
+#ggsave(filename = "year_over_year.jpeg", plot = year_over_year, device = "jpeg", width = 8, height = 4, dpi = 300)
+
+```
+
+## Create a Descriptive Stats Table by County
+
+```{r}
+# Full Sample (2006-2023)
+SScounty <- portdataSS %>% 
+  filter(COUNTY_NAME %in% c("Cumberland", "Hancock", "Knox", "Lincoln", "Sagadahoc", "Waldo", "Washington", "York")) %>% 
+  group_by(COUNTY_NAME) %>% 
+  summarise(mean_price = mean(PricePerPound2024),
+            sd_price = sd(PricePerPound2024),
+            total_landings = sum(POUNDS),
+            port_count = n_distinct(PORT_NAME))
+  
+# 2023 Only with % Diff Compared to Washington County
+washington_price <- portdataSS %>% 
+  filter(COUNTY_NAME == "Washington", Year == "2023") %>% 
+  summarise(washington_mean = mean(PRICEPERPOUND, na.rm = TRUE))
+
+SScounty2023 <- portdataSS %>% 
+  filter(COUNTY_NAME %in% c("Cumberland", "Hancock", "Knox", "Lincoln", "Sagadahoc","Waldo", "Washington", "York"), Year == "2023") %>% 
+  group_by(COUNTY_NAME) %>% 
+  summarise(mean_price = mean(PRICEPERPOUND, na.rm = TRUE),
+            sd_price = sd(PRICEPERPOUND, na.rm = TRUE),
+            total_landings = sum(POUNDS, na.rm = TRUE),
+            port_count = n_distinct(PORT_NAME),
+            max_price = max(PRICEPERPOUND, na.rm = TRUE),
+            min_price = min(PRICEPERPOUND, na.rm = TRUE)) %>% 
+  mutate(percent_diff_vs_washington = 100 * (mean_price - washington_price$washington_mean) / washington_price$washington_mean)
+
+distinct_ports <- portdataSS %>% 
+  filter(COUNTY_NAME %in% c("Cumberland", "Hancock", "Knox", "Lincoln", 
+                            "Sagadahoc", "Waldo", "Washington", "York"),
+         Year == "2023") %>%
+  distinct(COUNTY_NAME, PORT_NAME) %>%
+  arrange(COUNTY_NAME, PORT_NAME)
+
+```
+
+## Table 1: Organize Monthly Average Dataset 
+
+```{r}
+STMonthSoftShell2023 <- portdataSS %>% 
+  drop_na(fpiprice) %>% 
+  filter(year(Dates) == 2023) %>%
+  mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
+  group_by(Month) %>%
+  summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
+    median_PPP = median(fpiprice, na.rm = TRUE),
+    total_pounds = sum(POUNDS, na.rm = TRUE), n = n()) %>%
+  arrange(match(Month, month.abb))
+
+```
+
+# Figure 12: Mean Monthly Price/lb for All Years in Sample (2023 FPI-adj)
+
+```{r}
+MonthlyMeanPPP <- portdataSS %>%
+  drop_na(fpiprice) %>%
+  mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
+  group_by(Month) %>%
+  summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
+    SD_MeanPrice = sd(fpiprice, na.rm = TRUE),
+    median_PPP = median(fpiprice, na.rm = TRUE),
+    n = n()) %>%
+  arrange(match(Month, month.abb))
+
+PPPMonthBar <- ggplot(MonthlyMeanPPP, aes(x = Month, y = mean_PPP)) + 
+  geom_bar(stat = "identity", fill = "#07a3b7") + 
+  geom_errorbar(aes(ymin = mean_PPP - SD_MeanPrice, ymax = mean_PPP + SD_MeanPrice), width = 0.2) +
+  #ggtitle("Mean Soft-Shell Landing Price per Pound by Month (2006–2023)") + 
+  ylab("Price per Pound \n(2023 FPI-adj)") + xlab("") + 
+  geom_text(aes(y = mean_PPP - SD_MeanPrice - 0.2, label = round(mean_PPP, 2)), size = 3, vjust = 0.75) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank())
+
+PPPMonthBar
+
+#ggsave(filename = "PPPMonthBar.jpeg", plot = PPPMonthBar, device = "jpeg", width = 8, height = 4, dpi = 300)
+```
+## Create Monthly FPI for Northern Quahogs
+
+```{r}
+# Manual Monthly Price Indexes
+# Format to Year-Month
+portdataNQ$year_month <- format(portdataNQ$Dates, "%Y-%m")
+
+STMonthFPI_NQ <- portdataNQ %>% 
+  drop_na(PricePerPiece) %>% 
+  group_by(year_month,PORT_NAME) %>% 
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE),
+            mean_PPP = mean(PricePerPiece, na.rm = TRUE))
+
+base_month_NQ <- STMonthFPI_NQ %>% 
+  filter(year_month == "2023-12") %>% 
+  dplyr::rename(total_pounds_base = total_pounds,
+         mean_PPP_base = mean_PPP) %>% 
+  ungroup() %>% 
+  dplyr::select(2:4)
+
+STMonthFPI_NQ <- STMonthFPI_NQ  %>% 
+  left_join(., base_month_NQ) %>%
+  mutate(pq0 = mean_PPP*total_pounds_base) %>% 
+  mutate(p0q0 = mean_PPP_base*total_pounds_base) %>% 
+  mutate(pq = mean_PPP*total_pounds) %>% 
+  mutate(p0q = mean_PPP_base*total_pounds) %>% 
+  group_by(year_month) %>% 
+  summarise(agg_pq0 = sum(pq0, na.rm = TRUE),
+            agg_p0q0 = sum(p0q0, na.rm = TRUE),
+            agg_pq = sum(pq, na.rm = TRUE),
+            agg_p0q = sum(p0q, na.rm = TRUE)) %>% 
+            mutate(LPI = agg_pq0/agg_p0q0) %>% 
+            mutate(PPI = agg_pq/agg_p0q) %>% 
+            mutate(ManualFPI = sqrt(LPI*PPI))
+
+STMonth2023_NQ <- portdataNQ %>% 
+  filter(Year == "2023") %>% 
+  group_by(year_month) %>% 
+  dplyr::summarize(mean_PPP = mean(PricePerPiece, na.rm = TRUE)) # 2.04/lb Dec 2023
+# 0.67/piece Dec 2023
+
+STMonthFPI_NQ <- STMonthFPI_NQ %>% 
+  mutate(fpiprice = ManualFPI*0.67)
+```
+
+# Merge FPI-adjusted Prices into portdataNQ
+
+```{r}
+fpiadjust_NQ <- STMonthFPI_NQ %>% 
+  dplyr::select(year_month, fpiprice)
+
+portdataNQ <- portdataNQ %>% 
+  left_join(fpiadjust_NQ, by = "year_month")
+
+```
+
+## Figure 13: Restructure FPI Monthly to show Mean Prices: Soft-Shell
+
+```{r}
+# Reshape the data to long format
+long_data <- STMonthFPI %>%
+  pivot_longer(cols = c(fpiprice), 
+               names_to = "Type", 
+               values_to = "Value")
+
+# Create the line graph
+long_data$year_month <- as.Date(paste0(long_data$year_month, "-01"))
+
+monthlyFPI_price <- ggplot(long_data, aes(x = year_month, y = Value, color = Type)) +
+  geom_line(size = 0.25, color = gmri_cols("gmri blue")) + geom_point(size = 0.5, color = "#b94a40") +
+  labs(#title = "Monthly FPI by Price: 2006-2023",
+       x = "Year",
+       y = "FPI-adjusted Monthly Mean Price \n(Base Year = December 2023)") +
+   scale_x_date(
+    breaks = scales::date_breaks("2 years"),
+    labels = scales::date_format("%Y")) +
+  theme_minimal() + theme(legend.position = "none") 
+
+monthlyFPI_price
+
+# Save the plot as a JPEG file
+setwd("C:/Users/BenCotton/Desktop")
+#ggsave(filename = "MontlyFPI_price.jpeg", plot = monthlyFPI_price, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+```
+
+## Figure 14: Restructure FPI Monthly to show Mean Prices: Northern Quahog
+
+```{r}
+# Reshape the data to long format
+long_data_NQ <- STMonthFPI_NQ %>%
+  filter(year_month > "2009-12") %>% 
+  pivot_longer(cols = c(fpiprice), 
+               names_to = "Type", 
+               values_to = "Value")
+
+# Create the line graph
+long_data_NQ$year_month <- as.Date(paste0(long_data_NQ$year_month, "-01"))
+
+monthlyFPI_price_NQ <- ggplot(long_data_NQ, aes(x = year_month, y = Value, color = Type)) +
+  geom_line(size = 0.25, color = "#495057") + geom_point(size = 0.5, color = "#00b4d8") +
+  labs(#title = "Monthly FPI by Price: 2010-2023",
+       x = "Year",
+       y = "FPI-adjusted Monthly Mean Price \n(Base Year = December 2023)") +
+   scale_x_date(
+    breaks = scales::date_breaks("1 year"),
+    labels = scales::date_format("%Y")) +
+  theme_minimal() + theme(legend.position = "none") 
+
+monthlyFPI_price_NQ
+
+# Save the plot as a JPEG file
+setwd("C:/Users/BenCotton/Desktop")
+#ggsave(filename = "MonthlyFPI_price_NQ.jpeg", plot = monthlyFPI_price_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+```
+
+
+## Figure 16: Compute FPI at a Yearly Level and Include Figure that show FPI-adjusted Annual Average Prices for Each Region 
+
+```{r}
+STYearFPI <- portdataSS %>% 
+  drop_na(PRICEPERPOUND) %>% 
+  filter(Region != "NA") %>%
+  group_by(Year, PORT_NAME, Region) %>% 
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE),
+            mean_PPP = mean(PRICEPERPOUND, na.rm = TRUE))
+
+base_year <- STYearFPI %>%
+  ungroup() %>%
+  dplyr::select(2:4) %>% 
+  mutate(total_pounds_base = 5743610,
+    mean_PPP_base = 2.75)
+
+STYearFPI <- STYearFPI  %>% 
+  left_join(., base_year, relationship = "many-to-many") %>%
+  mutate(pq0 = mean_PPP*total_pounds_base) %>% 
+  mutate(p0q0 = mean_PPP_base*total_pounds_base) %>% 
+  mutate(pq = mean_PPP*total_pounds) %>% 
+  mutate(p0q = mean_PPP_base*total_pounds) %>% 
+  group_by(Year, Region) %>% 
+  summarise(agg_pq0 = sum(pq0, na.rm = TRUE),
+            agg_p0q0 = sum(p0q0, na.rm = TRUE),
+            agg_pq = sum(pq, na.rm = TRUE),
+            agg_p0q = sum(p0q, na.rm = TRUE)) %>% 
+            mutate(LPI = agg_pq0/agg_p0q0) %>% 
+            mutate(PPI = agg_pq/agg_p0q) %>% 
+            mutate(ManualFPI = sqrt(LPI*PPI))
+
+# Collect Mean Price per Pound by Region for 2024
+prices_2024 <- publicdataSS %>% 
+  filter(county %in% c("Cumberland", "Hancock", "Knox", "Lincoln", "Sagadahoc", "Waldo", "Washington", "York"), year == "2024") %>% 
+  mutate(Region = case_when(county %in% c("Cumberland", "York") ~ "Southern",
+      county %in% c("Knox", "Lincoln", "Sagadahoc", "Waldo") ~ "Midcoast",
+      county %in% c("Washington", "Hancock") ~ "Downeast",
+      TRUE ~ "Other"))
+  
+prices_2024 <- prices_2024 %>% 
+  group_by(Region) %>% 
+  summarise(mean_price = mean(value/weight)) # Downeast = $2.75, Midcoast = $2.74, Southern = $2.75
+
+STYearFPI <- STYearFPI %>% 
+  group_by(Region) %>% 
+  mutate(fpiprice = case_when(Region == "Southern" ~ ManualFPI * 2.75,
+    Region == "Midcoast" ~ ManualFPI * 2.74,
+    Region == "Downeast"  ~ ManualFPI * 2.75))
+
+# Create the line graph
+yearlyFPI_price <- ggplot(STYearFPI, aes(x = Year, y = fpiprice, color = Region)) +
+  geom_line(size = 0.75) +
+  labs(#title = "Yearly Fish Price Index: 2006-2023",
+    x = "Year",
+    y = "FPI-adjusted Yearly Mean Price \n(Base Year = 2024)",
+    color = "Region") +
+  scale_y_continuous(limits = c(1, 4)) +
+  scale_color_manual(
+    values = c(
+      "Downeast" = "#ebcb27",
+      "Midcoast" = "#b94a40",
+      "Southern" = "#773891")) +
+  scale_x_continuous(
+    breaks = seq(2006, 2024, by = 2),
+    labels = as.character(seq(2006, 2024, by = 2))) +
+  theme_minimal()
+
+yearlyFPI_price
+
+# Save the plot as a JPEG file
+setwd("C:/Users/BenCotton/Desktop")
+#ggsave(filename = "yearlyFPI_price.jpeg", plot = yearlyFPI_price, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+```
+# Time-Series Analysis
+
+## Soft-Shell Time-Series Data
+
+## Figure 15: Create the Weekly Time-Series Plot for Total Pounds and PPP
+
+```{r}
+# Monthly Aggregation 
+portdataSSPounds <- portdataSS %>% 
+  dplyr::select(Dates,POUNDS) %>% 
+  group_by(month = lubridate::floor_date(Dates, 'month')) %>%
+  dplyr::select(-Dates) %>% 
+  dplyr::summarize(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+# Convert to Time-Series
+portdataSSPounds_ts <- ts(portdataSSPounds$total_pounds, start = c(2006, 1), frequency = 12)
+
+# Turn Time-Series Plot into a ggplot
+# If portdataSSPounds_ts is a ts object, we need to convert it to a data frame with dates
+if (inherits(portdataSSPounds_ts, "ts")) {
+  data <- data.frame(
+    Date = as.Date(time(portdataSSPounds_ts), origin = "2006-01-01"), 
+    Pounds = as.numeric(portdataSSPounds_ts))
+} else if (inherits(portdataSSPounds_ts, "zoo") || inherits(portdataSSPounds_ts, "xts")) {
+  data <- data.frame(
+    Date = index(portdataSSPounds_ts),  
+    Pounds = coredata(portdataSSPounds_ts))
+}
+
+# Create the plot
+softshellts <- ggplot(data, aes(x = Date, y = Pounds)) +
+  geom_line(color = gmri_cols("gmri blue")) +  # Plot the time series as a line plot
+  geom_vline(xintercept = as.Date("2014-08-01"), color = "#ea4f12", linetype = "dashed", size = 1) +
+  #geom_text(aes(x = as.Date("2014-08-01"), y = max(Pounds - 270000), label = "Z-A Break"), color = "#ea4f12", hjust = 1.1, vjust = -1, size = 3) +
+  labs(y = "Total Pounds", x = NULL) +
+  scale_x_date(date_breaks = "2 years", date_labels = "%Y") +
+  scale_y_continuous(labels = label_comma()) +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 10),  
+    axis.title.y = element_text(size = 10))
+
+softshellts
+
+# Aggregated Monthly 
+portdataSSPPP <- portdataSS %>% 
+  dplyr::select(Dates,fpiprice) %>% 
+  group_by(month = lubridate::floor_date(Dates, 'month')) %>%
+  dplyr::summarize(mean_PPP = mean(fpiprice, na.rm = TRUE))
+
+portdataSSPPP <- na.omit(portdataSSPPP)
+
+portdataSSPPP_ts <- ts(portdataSSPPP$mean_PPP, start = c(2006, 1), frequency = 12)
+
+tsplot(portdataSSPPP_ts, main = "Monthly Price per Pound of Soft-Shell Clams (2023 FPI-adj): 2006-2023", ylab = "Price per Pound")
+
+# Price per Pound GG Plot
+# Transfer to GGplot
+if (inherits(portdataSSPPP_ts, "ts")) {
+  data <- data.frame(
+    Date = as.Date(time(portdataSSPPP_ts), origin = "2006-01-01"),  # Convert time to Date format
+    Price_Per_Pound = as.numeric(portdataSSPPP_ts))
+  } else if (inherits(portdataSSPPP_ts, "zoo") || inherits(portdataSSPPP_ts, "xts")) {
+  data <- data.frame(
+    Date = index(portdataSSPPP_ts),  
+    Price_Per_Pound = coredata(portdataSSPPP_ts))
+}
+
+# Create the plot for portdataSSPPP
+softshellPPP <- ggplot(data, aes(x = Date, y = Price_Per_Pound)) +
+  geom_line(color = gmri_cols("gmri blue")) + 
+  geom_vline(xintercept = as.numeric(as.Date("2014-05-04")), 
+             color = "#ea4f12", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-15")), 
+             color = "#ea4f12", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-06-07")), 
+             color = "#ea4f12", linetype = "dashed", size = 1) +
+  #geom_text(aes(x = as.Date("2014-05-04"), y = max(Price_Per_Pound - 0.5), label = "Z-A Break"), color = "#ea4f12", hjust = 1.1, vjust = -1, size = 3) +
+  scale_x_date(date_breaks = "2 years", date_labels = "%Y") +
+  labs(y = "Price Per Pound \n(2023 FPI-adj)", x = "Year") +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 10),  
+    axis.title.y = element_text(size = 10))
+
+softshellPPP
+
+# Combine Plots into One Figure 
+combined_SS <- softshellts / softshellPPP  
+  #+ plot_annotation(title = 'Monthly Soft-Shell Clam Time Series Data: 2006-2023', theme = theme(plot.title = element_text(hjust = 0.5)))
+
+
+combined_SS
+
+# Save the plot as a JPEG file
+#ggsave(filename = "combined_SS.jpeg", plot = combined_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+```
+
+# Volatility Analysis
+
+## Annual Total Price Volatility
+
+```{r}
+# Full Sample 
+# Aggregate
+annual_prices <- aggregate(cbind(VALUE, POUNDS) ~ Year, data = portdataSS, sum)
+
+# Calculate Price/lb
+annual_prices$PRICE <- annual_prices$VALUE / annual_prices$POUNDS
+
+# Organize by Year
+annual_prices <- annual_prices[order(annual_prices$Year), ]
+
+# Difference
+price_diffs <- diff(annual_prices$PRICE)
+
+# Calculate Standard Deviation
+sd_price_diffs <- sd(price_diffs)
+
+# Calculate Mean Prices
+mean_price <- mean(annual_prices$PRICE)
+
+# Calculate Volatility Metric
+price_volatility_metric_full <- sd_price_diffs / mean_price
+
+# 2006-2016
+# Filter
+price_data <- subset(portdataSS, Year >= 2006 & Year <= 2016)
+
+# Aggregate
+annual_prices <- aggregate(cbind(VALUE, POUNDS) ~ Year, data = price_data, sum)
+
+# Calculate Price/lb
+annual_prices$PRICE <- annual_prices$VALUE / annual_prices$POUNDS
+
+# Organize by Year
+annual_prices <- annual_prices[order(annual_prices$Year), ]
+
+# Difference
+price_diffs <- diff(annual_prices$PRICE)
+
+# Calculate Standard Deviation
+sd_price_diffs <- sd(price_diffs)
+
+# Calculate Mean Prices
+mean_price <- mean(annual_prices$PRICE)
+
+# Calculate Volatility Metric
+price_volatility_metric_2006_2016 <- sd_price_diffs / mean_price
+
+# 2013-2023
+# Filter
+price_data <- subset(portdataSS, Year >= 2013 & Year <= 2023)
+
+# Aggregate
+annual_prices <- aggregate(cbind(VALUE, POUNDS) ~ Year, data = price_data, sum)
+
+# Calculate Price/lb
+annual_prices$PRICE <- annual_prices$VALUE / annual_prices$POUNDS
+
+# Organize by Year
+annual_prices <- annual_prices[order(annual_prices$Year), ]
+
+# Difference
+price_diffs <- diff(annual_prices$PRICE)
+
+# Calculate Standard Deviation
+sd_price_diffs <- sd(price_diffs)
+
+# Calculate Mean Prices
+mean_price <- mean(annual_prices$PRICE)
+
+# Calculate Volatility Metric
+price_volatility_metric_2013_2023 <- sd_price_diffs / mean_price
+
+```
+
+## Inter-Annual (Year-to-Year) Landings Volatility
+
+```{r}
+## Full Sample ## 
+# Aggregate total landings per year
+annual_landings <- aggregate(POUNDS ~ Year, data = portdataSS, sum)
+
+# Sort by year
+annual_landings <- annual_landings[order(annual_landings$Year), ]
+
+# Calculate first differences (year-to-year changes in landings)
+diffs <- diff(annual_landings$POUNDS)
+
+# Calculate standard deviation of first differences
+sd_diffs <- sd(diffs)
+
+# Calculate mean of landings over the Full Sample
+mean_landings <- mean(annual_landings$POUNDS)
+
+# Calculate volatility metric
+volatility_metric_full <- sd_diffs / mean_landings
+
+## 2006-2016 ##
+# Filter data to relevant years
+data_filtered <- subset(portdataSS, Year >= 2006 & Year <= 2016)
+
+# Aggregate total landings per year 
+annual_landings <- aggregate(POUNDS ~ Year, data = data_filtered, sum)
+
+# Sort by year
+annual_landings <- annual_landings[order(annual_landings$Year), ]
+
+# Calculate first differences (year-to-year changes in landings)
+diffs <- diff(annual_landings$POUNDS)
+
+# Calculate standard deviation of first differences
+sd_diffs <- sd(diffs)
+
+# Calculate mean of landings over the 10-year period
+mean_landings <- mean(annual_landings$POUNDS)
+
+# Calculate volatility metric
+volatility_metric_2006_2016 <- sd_diffs / mean_landings
+
+## 2013-2023 ##
+# Filter data to relevant years
+data_filtered <- subset(portdataSS, Year >= 2013 & Year <= 2023)
+
+# Aggregate total landings per year
+annual_landings <- aggregate(POUNDS ~ Year, data = data_filtered, sum)
+
+# Sort by year
+annual_landings <- annual_landings[order(annual_landings$Year), ]
+
+# Calculate first differences (year-to-year changes in landings)
+diffs <- diff(annual_landings$POUNDS)
+
+# Calculate standard deviation of first differences
+sd_diffs <- sd(diffs)
+
+# Calculate mean of landings over the 10-year period
+mean_landings <- mean(annual_landings$POUNDS)
+
+# Calculate volatility metric
+volatility_metric_2013_2023 <- sd_diffs / mean_landings
+
+```
+
+## Intra-Annual (Year-to-Year) Volatility Price Analysis
+
+```{r}
+# Full Sample
+weekly_stats_full <- portdataSS %>%
+  group_by(Dates) %>%
+  summarise(mean_price = mean(PRICEPERPOUND, na.rm = TRUE))
+
+weekly_stats_full <- weekly_stats_full %>%
+  summarise(mean_ppp = mean(mean_price, na.rm = TRUE),
+            sd_price = sd(mean_price, na.rm = TRUE))
+
+interannual_volatility_price_full <- sum(weekly_stats_full$sd_price / weekly_stats_full$mean_ppp)
+
+# 2021
+weekly_stats_2021 <- portdataSS %>%
+  filter(Year == 2021) %>% 
+  group_by(Dates) %>%
+  summarise(mean_price = mean(PRICEPERPOUND, na.rm = TRUE))
+
+weekly_stats_2021 <- weekly_stats_2021 %>%
+  summarise(mean_ppp = mean(mean_price, na.rm = TRUE),
+            sd_price = sd(mean_price, na.rm = TRUE))
+
+interannual_volatility_price_2021 <- sum(weekly_stats_2021$sd_price / weekly_stats_2021$mean_ppp)
+
+# 2015
+weekly_stats_2015 <- portdataSS %>%
+  filter(Year == 2015) %>% 
+  group_by(Dates) %>%
+  summarise(mean_price = mean(PRICEPERPOUND, na.rm = TRUE))
+
+weekly_stats_2015 <- weekly_stats_2015 %>%
+  summarise(mean_ppp = mean(mean_price, na.rm = TRUE),
+            sd_price = sd(mean_price, na.rm = TRUE))
+
+interannual_volatility_price_2015 <- sum(weekly_stats_2015$sd_price / weekly_stats_2015$mean_ppp)
+
+```
+
+## Intra-Annual (Within-Year) Volatility Price Analysis for all Years in Sample 
+
+```{r}
+# Define the range of years you're interested in
+years <- 2006:2023
+
+# Function to compute intra-annual volatility for a single year
+calculate_volatility <- function(year_input) {
+  portdataSS %>%
+    filter(Year == year_input) %>%
+    group_by(Dates) %>%
+    summarise(mean_price = mean(PRICEPERPOUND, na.rm = TRUE), .groups = "drop") %>%
+    summarise(mean_ppp = mean(mean_price, na.rm = TRUE),
+      sd_price = sd(mean_price, na.rm = TRUE)) %>%
+    mutate(
+      year = year_input,
+      volatility = sd_price / mean_ppp) %>%
+    dplyr::select(year, volatility)
+}
+
+# Apply the function to all years and combine into one dataframe
+intra_annual_volatility_all_years <- map_dfr(years, calculate_volatility)
+
+# View result
+print(intra_annual_volatility_all_years)
+```
+
+# Bar Chart of Intra-Annual Price by Year (Not in Tech Report)
+
+```{r}
+intraannual_yr <- ggplot(intra_annual_volatility_all_years, aes(x = as.Date(paste0(year, "-01-01")), y = volatility)) +
+  geom_bar(stat = "identity", fill = "#b94a40") +
+  geom_text(aes(label = round(volatility, 2)),
+            size = 3,
+            vjust = ifelse(intra_annual_volatility_all_years$volatility >= 0, -0.5, 1.5),
+            color = "black") +
+  scale_x_date(
+    breaks = as.Date(c("2006-01-01", "2008-01-01","2010-01-01", "2012-01-01","2014-01-01","2016-01-01", "2018-01-01","2020-01-01", "2022-01-01")),
+    labels = c("2006","2008","2010","2012","2014","2016", "2018","2020","2022")) +
+  labs(title = "Intra-Annual Volatility (Within-Year)",
+    x = "Year",
+    y = "Volatility (SD / Mean Price)") +
+  theme_minimal(base_size = 12) +
+  theme(
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(face = "bold", color = "black"),
+    plot.title = element_text(face = "bold", color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+   geom_label(aes(x = as.Date("2022-01-01") + 365, y = max(volatility) * 0.95,
+      label = "Metric:\n < 0.13\n 0.13–0.20\n 0.20–0.30\n 0.30–0.85\n > 0.85"),
+    hjust = 0,
+    vjust = 1,
+    size = 3.5,
+    fill = "white",
+    color = "black",
+    label.size = 0.3)
+
+intraannual_yr
+
+#ggsave(filename = "intraannual_yr.jpeg", plot = intraannual_yr, device = "jpeg", width = 8, height = 4, dpi = 300)
+
+```
+
+# Figure 17: Bar Chart of Intra-Annual Price by Year
+
+```{r}
+intraannual_yr <- ggplot(intra_annual_volatility_all_years, 
+                         aes(x = factor(year), y = volatility, fill = volatility)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  geom_text(aes(label = round(volatility, 2)),
+            size = 3,
+            hjust = -0.1,
+            color = "black") +
+  labs(title = "Intra-Annual Volatility (Within-Year)",
+       x = "Year",
+       y = "Volatility (SD / Mean Price)") +
+  scale_fill_gradient(
+    low = "#f7c6c6",
+    high = "#b94a40") +
+  guides(fill = "none") + 
+  theme_minimal(base_size = 12) +
+  theme(
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(face = "bold", color = "black"),
+    plot.title = element_text(face = "bold", color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  coord_flip(clip = "off") +
+  geom_label(aes(x = "2022",  # Match x-axis factor label for placement
+                 y = max(volatility) + 0.02),
+             label = "Metric:\n < 0.13 (Low Volatility)\n 0.13–0.20\n 0.20–0.30\n 0.30–0.85\n > 0.85 (High Volatility)",
+             hjust = 0,
+             vjust = 4.5,
+             size = 3,
+             fill = "white",
+             label.size = 0.3,
+             color = "black") +
+  expand_limits(y = max(intra_annual_volatility_all_years$volatility) + 0.1)
+
+intraannual_yr
+
+#ggsave(filename = "intraannual_yr_flipped.jpeg", plot = intraannual_yr, device = "jpeg", width = 8, height = 6, dpi = 300)
+
+```
+
+## Intra-Annual (Within-Year) Volatility Landings Analysis
+
+```{r}
+# Full Sample 
+weekly_pounds_full <- portdataSS %>%
+  group_by(Dates) %>%
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+weekly_pounds_full <- weekly_pounds_full %>% 
+  summarise(mean_pounds = mean(total_pounds, na.rm = TRUE),
+            sd_pounds = sd(total_pounds, na.rm = TRUE))
+
+interannual_volatility_landings_full <- sum(weekly_pounds_full$sd_pounds / weekly_pounds_full$mean_pounds)
+
+# 2021
+weekly_pounds_2021 <- portdataSS %>%
+  filter(Year == 2021) %>% 
+  group_by(Dates) %>%
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+weekly_pounds_2021 <- weekly_pounds_2021 %>% 
+  summarise(mean_pounds = mean(total_pounds, na.rm = TRUE),
+            sd_pounds = sd(total_pounds, na.rm = TRUE))
+
+interannual_volatility_landings_2021 <- sum(weekly_pounds_2021$sd_pounds / weekly_pounds_2021$mean_pounds)
+
+# 2015
+weekly_pounds_2015 <- portdataSS %>%
+  filter(Year == 2015) %>% 
+  group_by(Dates) %>%
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+weekly_pounds_2015 <- weekly_pounds_2015 %>% 
+  summarise(mean_pounds = mean(total_pounds, na.rm = TRUE),
+            sd_pounds = sd(total_pounds, na.rm = TRUE))
+
+interannual_volatility_landings_2015 <- sum(weekly_pounds_2015$sd_pounds / weekly_pounds_2015$mean_pounds)
+
+# 2006
+weekly_pounds_2006 <- portdataSS %>%
+  filter(Year == 2006) %>% 
+  group_by(Dates) %>%
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE))
+
+weekly_pounds_2006 <- weekly_pounds_2006 %>% 
+  summarise(mean_pounds = mean(total_pounds, na.rm = TRUE),
+            sd_pounds = sd(total_pounds, na.rm = TRUE))
+
+interannual_volatility_landings_2006 <- sum(weekly_pounds_2006$sd_pounds / weekly_pounds_2006$mean_pounds)
+
+```
+
+# Relative Volatility Using Beta Coefficients
+
+The following code calculates beta coefficients for each port with at least 1 week of landings in each year of our sample (2006-2023)
+
+## Beta Coefficient for 62 Ports (Using All Bivalve Species as Index)
+
+### Filter Port Data to at least 1 week with landings every year of sample
+
+```{r}
+# Step 1: Get all combinations of Year and PORT_NAME
+all_years <- unique(stormdata$Year)
+
+# Step 2: Count number of weeks with landings per port and year
+portlandings <- portdata %>% 
+  filter(POUNDS > 0) %>%
+  group_by(PORT_NAME, Year) %>% 
+  summarise(weeks_with_landings = n_distinct(Dates), .groups = "drop")
+
+# Step 3: Filter to ports that appear in all years and have ≥13 weeks each year
+valid_ports <- portlandings %>%
+  group_by(PORT_NAME) %>%
+  filter(n() == length(all_years)) %>%  # ensure the port has entries for all years
+  summarise(all_years_valid = all(weeks_with_landings >= 1), .groups = "drop") %>%
+  filter(all_years_valid) %>%
+  pull(PORT_NAME)
+
+# Step 4: Filter stormdata to only include valid ports
+filtered_data <- portdata %>%
+  filter(PORT_NAME %in% valid_ports)
+
+```
+
+### Table 2: Calculate 62 Municipal Port-Level Beta-Coefficients
+
+```{r}
+# Calculate Port-Level Prices Only Using Ports for All Bivalves with 13 Weeks of Landings 
+portdataSSPorts <- filtered_data %>% 
+  group_by(Dates, PORT_NAME) %>% 
+  summarise(sum_value_port = sum(VALUE, na.rm = TRUE),
+            sum_pounds_port = sum(POUNDS, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(nprice_ports = sum_value_port/sum_pounds_port) 
+
+# Calculate Full Market 
+portdataSSsummary <- portdata %>% 
+  group_by(Dates) %>%
+  summarise(sum_value_allport = sum(VALUE, na.rm = TRUE),
+            sum_lndlb_allport = sum(POUNDS, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(nprice_allport = sum_value_allport/sum_lndlb_allport)
+
+# Merge Data for Analysis 
+portdataSSPorts <- portdataSSPorts %>% 
+  left_join(., portdataSSsummary)
+  
+portcheck <- portdataSSPorts %>%
+  group_by(Dates, PORT_NAME) %>%
+  summarise(complete_pairs = sum(!is.na(nprice_ports) & !is.na(nprice_allport)))
+
+# Run the Covariance (Price of Port/All_Ports, Price of All_Ports), Variance (Price of All_Ports), and beta (covariance/variance)
+portdataSSPorts <- portdataSSPorts %>% 
+  group_by(PORT_NAME) %>% 
+  summarise(covariance = cov(nprice_ports, nprice_allport, use = "complete.obs"),
+         variance = var(nprice_allport, use = "complete.obs"),
+         beta = covariance/variance) 
+
+# Spread of Data 
+sd(portdataSSPorts$beta)
+
+
+```
+### Sorrento Inter-Annual Price Volatility
+
+```{r}
+## Sorrento 2006-2023
+annual_prices_sorrento <- portdataSS %>% 
+  filter(PORT_NAME == "Sorrento")
+
+# Aggregate total landings per year
+annual_prices_sorrento <- aggregate(cbind(VALUE, POUNDS) ~ Year, data = annual_prices_sorrento, sum)
+
+# Calculate Price/lb
+annual_prices_sorrento$PRICE <- annual_prices_sorrento$VALUE / annual_prices_sorrento$POUNDS
+
+# Organize by Year
+annual_prices_sorrento <- annual_prices_sorrento[order(annual_prices_sorrento$Year), ]
+
+# Difference
+price_diffs_sorrento <- diff(annual_prices_sorrento$PRICE)
+
+# Calculate Standard Deviation
+sd_price_diffs <- sd(price_diffs)
+
+# Calculate Mean Prices
+mean_price_sorrento <- mean(annual_prices_sorrento$PRICE)
+
+# Calculate Volatility Metric
+price_volatility_metric_sorrento <- sd_price_diffs / mean_price_sorrento
+```
+
+### Damariscotta Inter-Annual Price Volatility
+
+```{r}
+## Sorrento 2006-2023
+annual_prices_damariscotta <- portdataSS %>% 
+  filter(PORT_NAME == "Damariscotta")
+
+# Aggregate total landings per year
+annual_prices_damariscotta <- aggregate(cbind(VALUE, POUNDS) ~ Year, data = annual_prices_damariscotta, sum)
+
+# Calculate Price/lb
+annual_prices_damariscotta$PRICE <- annual_prices_damariscotta$VALUE / annual_prices_damariscotta$POUNDS
+
+# Organize by Year
+annual_prices_damariscotta <- annual_prices_damariscotta[order(annual_prices_damariscotta$Year), ]
+
+# Difference
+price_diffs_damariscotta <- diff(annual_prices_damariscotta$PRICE)
+
+# Calculate Standard Deviation
+sd_price_diffs <- sd(price_diffs)
+
+# Calculate Mean Prices
+mean_price_damariscotta <- mean(annual_prices_damariscotta$PRICE)
+
+# Calculate Volatility Metric
+price_volatility_metric_damariscotta <- sd_price_diffs / mean_price_damariscotta
+```
+
+# Storm Information 
+
+## Figure 19: Landings by Region & Storm Status
+
+```{r}
+# Regionalize Data and Assess Large Landing Weeks 
+landingsRegion <- stormdataSS %>% 
+  filter(!is.na(Region)) %>%
+  group_by(Dates, Region) %>% 
+  summarise(total_landings = sum(POUNDS, na.rm = TRUE))
+
+landingsRegion <- landingsRegion %>% 
+  left_join(stormdataSS, landingsRegion, by = c("Dates", "Region"))
+
+landingsRegionStormy <- landingsRegion %>% 
+    filter(storm == "stormy")
+
+landingsRegionNotStormy <- landingsRegion %>% 
+    filter(storm == "notstormy")
+
+# Combine the two datasets with a "storm" column already included
+combined_landings <- bind_rows(landingsRegionStormy, landingsRegionNotStormy)
+
+# Recode storm column for better legend labels
+combined_landings$storm <- dplyr::recode(combined_landings$storm,
+                                   "stormy" = "Stormy",
+                                   "notstormy" = "Not Stormy")
+
+gmri_cols <- c("Stormy" = "#004966", "Not Stormy" = "#ebcb27")
+
+# Boxplot comparing stormy and not stormy landings per region
+StormLandings <- ggplot(combined_landings, aes(x = Region, y = total_landings, fill = storm)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  coord_flip() +
+  scale_y_continuous(labels = comma) +  
+  scale_fill_manual(values = gmri_cols) +
+  labs(#title = "Landings by Region and Storm Status",
+       x = "Region", 
+       y = "Total Weekly Landings (lbs)", 
+       fill = "Storm Status") +  
+  theme_bw()
+
+StormLandings
+# Save the plot as a JPEG file
+#ggsave(filename = "StormLandings.jpeg", plot = StormLandings, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+
+```
+## Storm T-Test of Significance: Regional
+
+```{r}
+# T-test Between Regions
+ttest_results <- combined_landings %>%
+  group_by(Region) %>%
+  filter(!is.na(total_landings)) %>%
+  summarise(test = list(t.test(total_landings ~ storm)),
+    .groups = "drop") %>%
+  mutate(tidy_result = purrr::map(test, broom::tidy)) %>%
+  unnest(tidy_result) %>%
+  dplyr::select(Region, p.value, statistic)
+
+# T-Test Between Stormy/Not Stormy Weeks
+weekly_landings <- combined_landings %>%
+  group_by(Region, Dates, storm) %>%
+  summarise(weekly_total = sum(POUNDS, na.rm = TRUE), .groups = "drop")
+
+ttest_weekly <- weekly_landings %>%
+  group_by(Region) %>%
+  summarise(test = list(t.test(weekly_total ~ storm)),
+    .groups = "drop") %>%
+  mutate(tidy_result = map(test, broom::tidy)) %>%
+  unnest(tidy_result) %>%
+  dplyr::select(Region, p.value, statistic, estimate, conf.low, conf.high)
+
+print(ttest_weekly)
+
+# Check Direction of Effects
+weekly_landings %>%
+  group_by(Region, storm) %>%
+  summarise(mean_weekly = mean(weekly_total), .groups = "drop")
+
+# Seasonal Storm Statistical Effects 
+weekly_landings <- combined_landings %>%
+  group_by(Season, Region, Dates, storm) %>%
+  summarise(weekly_total = sum(POUNDS, na.rm = TRUE), .groups = "drop")
+
+ttest_weekly <- weekly_landings %>%
+  group_by(Season, Region) %>%
+  summarise(test = list(t.test(weekly_total ~ storm)),
+    .groups = "drop") %>%
+  mutate(tidy_result = map(test, broom::tidy)) %>%
+  unnest(tidy_result) %>%
+  dplyr::select(Season, Region, p.value, statistic, estimate, conf.low, conf.high)
+
+print(ttest_weekly)
+
+weekly_landings %>%
+  group_by(Season, Region, storm) %>%
+  summarise(mean_weekly = mean(weekly_total), .groups = "drop")
+
+```
+
+# OLS Regression: Storm Occurrences
+
+```{r}
+storm_weekly <- stormdataSS %>%
+  filter(Region != "NA") %>% 
+  group_by(Dates, Region, Season) %>%
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE),
+    num_storms = mean(num_storms, na.rm = TRUE),
+    .groups = "drop")
+
+olsreg <- lm(log(total_pounds) ~ num_storms + Region + Season, data = storm_weekly)
+
+summary(olsreg)
+
+```
+
+## Merge Tidal Data into Storm Data 
+
+```{r}
+setwd("C:/Users/BenCotton/Desktop/dmr_data")
+tidaldataraw <- read_csv("tidaldataraw.csv")
+
+```
+
+# Figure 18: Natural Spline Relationship between Landings and Harvested Pounds
+
+```{r}
+# Try only Using Seasonal Landings & Raw Data 
+library(splines)
+summertides <- tidaldataraw %>% 
+  filter(month(Dates) %in% 7:10) %>% 
+  mutate(Dates = floor_date(Dates, unit = "week", week_start = 7)) %>%
+  filter(Dates >= as.Date("2006-01-01")) %>% 
+  group_by(Dates, Region) %>%
+  dplyr::summarize(mean_MLLW = mean(`LW (ft MLLW)`, na.rm = TRUE)) %>%
+  ungroup()
+  
+summerlandings <- portdataSS %>% 
+  dplyr::select(Dates, Region, POUNDS) %>% 
+  filter(month(Dates) %in% 7:10)
+
+summerfigure_raw <- summerlandings %>% 
+  left_join(summertides, by = c("Dates", "Region")) %>% 
+  mutate(log_pounds = log(POUNDS)) %>% 
+  filter(!is.na(Region))
+
+# Initial Plot
+ggplot(summerfigure_raw, aes(x = mean_MLLW, y = log_pounds)) +
+  #geom_point(alpha = 0.6) +  # Scatterplot
+  geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = TRUE, color = gmri_cols("gmri blue")) +
+  stat_smooth(method = "lm",
+              formula = y ~ ns(x, df = 10), se = TRUE, fullrange = TRUE,
+              linetype = "dashed", color = "#ABB400") +
+  labs(title = "Polynomial Relationship Between Tidal Level and Landed Pounds",
+    x = "Tidal Low Water Level (ft, MLLW)",
+    y = "Total Pounds") +
+  theme_minimal()
+
+# Facet Wrap by Region
+summerplot <- ggplot(summerfigure_raw, aes(x = mean_MLLW, y = log_pounds)) +
+  #geom_point(alpha = 0.6) +  # Scatterplot
+  #geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = FALSE, color = gmri_cols("gmri blue")) +
+  stat_smooth(method = "lm",
+              formula = y ~ ns(x, df = 3), se = TRUE, fullrange = FALSE,
+              linetype = "solid", color = "#057872") +
+  facet_wrap(~ Region) +
+  labs(x = NULL,
+    y = "Total Pounds (Log-Scale)") +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(), 
+    strip.background = element_rect(fill = "white", color = "black"),
+    axis.text = element_text(size = 20),
+    axis.title = element_text(size = 22),
+    strip.text = element_text(size = 22),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 22))
+
+summerplot
+
+# Use a Step Function and Plot
+# Step 1: Bin mean_MLLW and summarize by Region
+binned_data <- summerfigure_raw %>%
+  mutate(mean_MLLW_bin = cut(mean_MLLW, breaks = 20)) %>%  # Adjust 'breaks' as needed
+  group_by(Region, mean_MLLW_bin) %>%
+  summarise(
+    mean_MLLW_center = mean(mean_MLLW, na.rm = TRUE),
+    avg_log_pounds = mean(log_pounds, na.rm = TRUE),
+    .groups = "drop") %>%
+  arrange(Region, mean_MLLW_center)
+
+# Step 2: Plot with geom_step
+stepfunc_plot <- ggplot(binned_data, aes(x = mean_MLLW_center, y = avg_log_pounds)) +
+  geom_step(direction = "hv", color = "#057872") +
+  facet_wrap(~ Region) +
+  labs(
+    x = NULL,
+    y = "Average Total Pounds (log scale)") +
+  theme_bw() +
+   theme(panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(), 
+    strip.background = element_rect(fill = "white", color = "black"),
+    axis.text = element_text(size = 20),
+    axis.title = element_text(size = 22),
+    strip.text = element_text(size = 22),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 22))
+
+
+```
+## Plot Summer Figure
+
+```{r}
+# Tide Heights: Summer Only 
+# Bin MLLW into Heights by Region
+tideheights_summer <- tidaldataraw %>% 
+  group_by(Dates, Region) %>%
+  filter(month(Dates) %in% 7:10) %>% 
+  dplyr::summarize(LW = mean(`LW (ft MLLW)`), .groups = "drop")
+  
+tidehisto_summer <- tideheights_summer %>%   
+  ggplot(aes(x = LW)) +
+  geom_histogram(binwidth = 0.5, fill = "#057872", color = "white") +
+  facet_wrap(~ Region) +  
+  scale_x_continuous(limits = c(-2, 4)) +
+  labs(x = "Tidal Low Water Level (ft. MLLW)",
+       y = "Number of Days") +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    strip.background = element_rect(fill = "white", color = "black"),
+    
+    axis.text = element_text(size = 20),
+    axis.title = element_text(size = 22),
+    strip.text = element_text(size = 22),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 22))
+
+tidehisto
+
+# Combine plots with patchwork
+Combined_Plot_Summer <- summerplot / tidehisto_summer + 
+  plot_layout(heights = c(2, 1)) + 
+  plot_annotation(#title = "Estimated Trend of Summer Landings over Mean Low Water \nUsing Natural Splines (df = 3)",
+  theme = theme(plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
+                theme(axis.text = element_text(size = 20),
+                      axis.title = element_text(size = 22),
+                      strip.text = element_text(size = 22),
+                      legend.text = element_text(size = 20),
+                      legend.title = element_text(size = 22))))
+
+Combined_Plot_Summer
+
+#ggsave("Combined_Plot_Summer.png", Combined_Plot_Summer, width = 15, height = 12, dpi = 300, bg = "white")
+
+```
+# OLS Regression: Tidal Heights
+
+```{r}
+tidaldata_weekly <- summerfigure_raw %>%
+  group_by(Dates, Region) %>%
+  summarise(total_pounds = sum(POUNDS, na.rm = TRUE),
+    mean_MLLW = mean(mean_MLLW, na.rm = TRUE),
+    .groups = "drop")
+  
+olsreg <- lm(log(total_pounds) ~ mean_MLLW + Region, data = tidaldata_weekly)
+
+summary(olsreg)
+```
+### Figure 20: Number of Shellfish Area Closures per Year (2014-2024)
+
+```{r}
+# Create visualization 1: Bar chart showing number of closures
+p1 <- ggplot(closures_per_year, aes(x = factor(Year), y = Closures)) +
+  geom_col(aes(fill = Closures), alpha = 0.8, width = 0.7) +
+  geom_text(aes(label = Closures), 
+            vjust = -0.5, size = 4) +
+  scale_fill_gradient(low = "#fee8c8", high = "#d94701", name = "Number of\nClosures") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  labs(title = "Number of Shellfish Area Closures Per Year (2014-2024)",
+    x = "Year",
+    y = "Number of Closures") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.x = element_blank())
+
+print(p1)
+
+library(lubridate)
+
+# Prepare the data with seasonal and temporal variables
+seasonal_props <- new_data %>%
+  mutate(
+    date = mdy(`Legal Notice Date`),  # Parse mm/dd/yyyy format
+    year = year(date),
+    month = month(date),
+    day_of_year = yday(date),
+    month_name = month(date, label = TRUE, abbr = TRUE),
+    season = case_when(
+      month %in% c(12, 1, 2) ~ "Winter",
+      month %in% c(3, 4, 5) ~ "Spring", 
+      month %in% c(6, 7, 8) ~ "Summer",
+      month %in% c(9, 10, 11) ~ "Fall"
+    ),
+    season = factor(season, levels = c("Winter", "Spring", "Summer", "Fall")),
+    # Create time periods for analysis
+    time_period = case_when(
+      year <= 2016 ~ "Early (2014-2016)",
+      year <= 2019 ~ "Middle (2017-2019)",
+      year <= 2022 ~ "Late (2020-2022)",
+      TRUE ~ "Recent (2023-2025)"),
+    time_period = factor(time_period, levels = c("Early (2014-2016)", "Middle (2017-2019)", 
+                                                 "Late (2020-2022)", "Recent (2023-2025)")))
+```
+
+### Figure 21: Changes in Seasonal Timing of Closures: 2014-2024
+
+```{r}
+# 2. VISUALIZATION: Seasonal proportions over time (stacked bar chart)
+p2 <- seasonal_props %>%
+  filter(year != 2025) %>%
+  ggplot(aes(x = year, y = proportion, fill = season)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_brewer(type = "qual", palette = "Set1", name = "Season") +
+  scale_x_continuous(breaks = seq(min(seasonal_props$year[seasonal_props$year != 2025]), 
+                                  max(seasonal_props$year[seasonal_props$year != 2025]), 
+                                  by = 1)) +
+  labs(title = "Changes in Seasonal Timing of Closures Over Time",
+    subtitle = "Percentage of annual closures occurring in each season",
+    x = "Year",
+    y = "Percentage of Annual Closures (%)",
+    caption = "Stacked bar chart showing seasonal distribution") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(p2)
+```
+
+
+# End of Code
