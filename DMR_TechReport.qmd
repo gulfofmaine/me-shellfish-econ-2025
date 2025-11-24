@@ -154,7 +154,7 @@ setwd("C:/Users/BenCotton/Desktop")
 
 ```
 
-# Fisheries Overview 
+# Fisheries Overview
 
 ## Figure 5: Soft-Shell Landings and Value: 2006-2023
 
@@ -302,7 +302,9 @@ landings_value_EO
 
 #ggsave(filename = "landings_value_EO.jpeg", plot = landings_value_EO, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
+
 # FPI Calculations
+
 ## FPI-Measures Prices
 
 ```{r}
@@ -367,6 +369,7 @@ STMonthFPI <- STMonthFPI  %>%
 STMonthFPI <- STMonthFPI %>% 
   mutate(fpiprice = ManualFPI*2.53)
 ```
+
 # Merge FPI-adjusted Prices into portdataSS
 
 ```{r}
@@ -387,8 +390,7 @@ STMonthSoftShell2023 <- portdataSS %>%
   mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
   group_by(Month) %>%
   summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
-    total_pounds = sum(POUNDS, na.rm = TRUE), 
-    n = n()) %>%
+    total_pounds = sum(POUNDS, na.rm = TRUE)) %>%
   arrange(match(Month, month.abb))
 
 range_prices <- range(STMonthSoftShell2023$mean_PPP, na.rm = TRUE)
@@ -399,9 +401,13 @@ PPPMonthScaledPounds2023 <- ggplot(STMonthSoftShell2023, aes(x = Month)) +
   geom_bar(aes(y = total_pounds / scaling_factor), stat = "identity", fill = "#00608a") +
   geom_line(aes(y = mean_PPP), group = 1, color = "#ea4f12", size = 0.75) +
   geom_point(aes(y = mean_PPP), color = "#ea4f12", size = 2) +
-  scale_y_continuous(name = "Mean Price per Pound \n(2023 FPI-adjusted)",
-    sec.axis = sec_axis(~ . * scaling_factor, name = "Total Pounds Harvested", labels = comma)) +
-  #ggtitle("2023 Monthly Soft-Shell Landings and Mean Price") +
+  scale_y_continuous(limits = c(0, 4),
+    name = "Mean Price per Pound\n(2023 FPI-adjusted)",
+    sec.axis = sec_axis(
+      ~ . * scaling_factor,
+      name = "Total Pounds Harvested",
+      labels = scales::comma)) +
+  ggtitle("2023 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2023") +
   theme_minimal() +
   theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
@@ -426,24 +432,30 @@ STMonthSoftShell2021 <- portdataSS %>%
   mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
   group_by(Month) %>%
   summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
-    total_pounds = sum(POUNDS, na.rm = TRUE), 
-    n = n()) %>%
+    total_pounds = sum(POUNDS, na.rm = TRUE)) %>%
   arrange(match(Month, month.abb))
 
 range_prices <- range(STMonthSoftShell2021$mean_PPP, na.rm = TRUE)
 range_pounds <- range(STMonthSoftShell2021$total_pounds, na.rm = TRUE)
 scaling_factor <- max(range_pounds) / max(range_prices)  # Align max values
 
+max_primary <- max(STMonthSoftShell2021$total_pounds / scaling_factor, na.rm = TRUE)
+
 PPPMonthScaledPounds2021 <- ggplot(STMonthSoftShell2021, aes(x = Month)) + 
   geom_bar(aes(y = total_pounds / scaling_factor), stat = "identity", fill = "#00608a") +
   geom_line(aes(y = mean_PPP), group = 1, color = "#ea4f12", size = 0.75) +
   geom_point(aes(y = mean_PPP), color = "#ea4f12", size = 2) +
-  scale_y_continuous(name = "Mean Price per Pound \n(2023 FPI-adjusted)",
-    sec.axis = sec_axis(~ . * scaling_factor, name = "Total Pounds Harvested", labels = comma)) +
-  #ggtitle("2021 Monthly Soft-Shell Landings and Mean Price") +
+  scale_y_continuous(
+    limits = c(0,  5),
+    name = "Mean Price per Pound\n(2023 FPI-adjusted)",
+    sec.axis = sec_axis(~ . * scaling_factor,
+      name = "Total Pounds Harvested",
+      labels = scales::comma)) +
+  ggtitle("2021 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2021") +
   theme_minimal() +
-  theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
+  theme(
+    axis.title.y = element_text(face = "bold", color = "#ea4f12"),
     axis.title.y.right = element_text(face = "bold", color = "#00608a"),
     axis.title.x = element_text(face = "bold"),
     axis.text = element_text(color = "black"),
@@ -465,21 +477,28 @@ STMonthSoftShell2015 <- portdataSS %>%
   mutate(Month = lubridate::month(Dates, label = TRUE, abbr = TRUE)) %>%
   group_by(Month) %>%
   summarise(mean_PPP = mean(fpiprice, na.rm = TRUE),
-    total_pounds = sum(POUNDS, na.rm = TRUE), 
-    n = n()) %>%
+    total_pounds = sum(POUNDS, na.rm = TRUE)) %>%
   arrange(match(Month, month.abb))
 
 range_prices <- range(STMonthSoftShell2015$mean_PPP, na.rm = TRUE)
 range_pounds <- range(STMonthSoftShell2015$total_pounds, na.rm = TRUE)
 scaling_factor <- max(range_pounds) / max(range_prices)  # Align max values
 
+max_primary <- max(STMonthSoftShell2015$total_pounds / scaling_factor, na.rm = TRUE)
+
 PPPMonthScaledPounds2015 <- ggplot(STMonthSoftShell2015, aes(x = Month)) + 
   geom_bar(aes(y = total_pounds / scaling_factor), stat = "identity", fill = "#00608a") +
   geom_line(aes(y = mean_PPP), group = 1, color = "#ea4f12", size = 0.75) +
   geom_point(aes(y = mean_PPP), color = "#ea4f12", size = 2) +
-  scale_y_continuous(name = "Mean Price per Pound \n(2023 FPI-adjusted)",
-    sec.axis = sec_axis(~ . * scaling_factor, name = "Total Pounds Harvested", labels = comma)) +
-  #ggtitle("2015 Monthly Soft-Shell Landings and Mean Price") +
+  scale_y_continuous(
+    limits = c(0,  4),
+    name = "Mean Price per Pound\n(2023 FPI-adjusted)",
+    sec.axis = sec_axis(
+  ~ . * scaling_factor,
+  name = "Total Pounds Harvested",
+  labels = scales::comma,
+  breaks = c(0, 500000, 1000000, 1500000, 2000000))) +
+  ggtitle("2015 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2015") +
   theme_minimal() +
   theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
@@ -494,7 +513,6 @@ PPPMonthScaledPounds2015
 
 #ggsave(filename = "PPPMonthScaledPounds2015.jpeg", plot = PPPMonthScaledPounds2015, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
-
 # Figure 9: Create a Percentage Difference in Total Pounds Year-Over-Year
 
 ```{r}
@@ -568,7 +586,7 @@ distinct_ports <- portdataSS %>%
 
 ```
 
-## Table 1: Organize Monthly Average Dataset 
+## Table 1: Organize Monthly Average Dataset
 
 ```{r}
 STMonthSoftShell2023 <- portdataSS %>% 
@@ -610,6 +628,7 @@ PPPMonthBar
 
 #ggsave(filename = "PPPMonthBar.jpeg", plot = PPPMonthBar, device = "jpeg", width = 8, height = 4, dpi = 300)
 ```
+
 ## Create Monthly FPI for Northern Quahogs
 
 ```{r}
@@ -727,8 +746,7 @@ setwd("C:/Users/BenCotton/Desktop")
 
 ```
 
-
-## Figure 16: Compute FPI at a Yearly Level and Include Figure that show FPI-adjusted Annual Average Prices for Each Region 
+## Figure 16: Compute FPI at a Yearly Level and Include Figure that show FPI-adjusted Annual Average Prices for Each Region
 
 ```{r}
 STYearFPI <- portdataSS %>% 
@@ -802,6 +820,7 @@ setwd("C:/Users/BenCotton/Desktop")
 #ggsave(filename = "yearlyFPI_price.jpeg", plot = yearlyFPI_price, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 ```
+
 # Time-Series Analysis
 
 ## Soft-Shell Time-Series Data
@@ -1086,7 +1105,7 @@ interannual_volatility_price_2015 <- sum(weekly_stats_2015$sd_price / weekly_sta
 
 ```
 
-## Intra-Annual (Within-Year) Volatility Price Analysis for all Years in Sample 
+## Intra-Annual (Within-Year) Volatility Price Analysis for all Years in Sample
 
 ```{r}
 # Define the range of years you're interested in
@@ -1318,6 +1337,7 @@ sd(portdataSSPorts$beta)
 
 
 ```
+
 ### Sorrento Inter-Annual Price Volatility
 
 ```{r}
@@ -1376,7 +1396,7 @@ mean_price_damariscotta <- mean(annual_prices_damariscotta$PRICE)
 price_volatility_metric_damariscotta <- sd_price_diffs / mean_price_damariscotta
 ```
 
-# Storm Information 
+# Storm Information
 
 ## Figure 19: Landings by Region & Storm Status
 
@@ -1424,6 +1444,7 @@ StormLandings
 
 
 ```
+
 ## Storm T-Test of Significance: Regional
 
 ```{r}
@@ -1494,7 +1515,7 @@ summary(olsreg)
 
 ```
 
-## Merge Tidal Data into Storm Data 
+## Merge Tidal Data into Storm Data
 
 ```{r}
 setwd("C:/Users/BenCotton/Desktop/dmr_data")
@@ -1592,6 +1613,7 @@ stepfunc_plot <- ggplot(binned_data, aes(x = mean_MLLW_center, y = avg_log_pound
 
 
 ```
+
 ## Plot Summer Figure
 
 ```{r}
@@ -1640,6 +1662,7 @@ Combined_Plot_Summer
 #ggsave("Combined_Plot_Summer.png", Combined_Plot_Summer, width = 15, height = 12, dpi = 300, bg = "white")
 
 ```
+
 # OLS Regression: Tidal Heights
 
 ```{r}
@@ -1653,6 +1676,26 @@ olsreg <- lm(log(total_pounds) ~ mean_MLLW + Region, data = tidaldata_weekly)
 
 summary(olsreg)
 ```
+
+## Merge in Closure Data 
+
+```{r}
+closures <- read_excel("Waterquality_rainfall_only.xlsx")
+
+closures$`Legal Notice Date` <- as.Date(closures$`Legal Notice Date`, format = "%m/%d/%Y")
+
+closures_per_year <- closures %>% 
+  rename(date = `Legal Notice Date`) 
+
+closures_per_year <- closures_per_year %>% 
+  filter(date < "2025-01-01") %>% 
+  mutate(Year = year(date)) %>% 
+  group_by(Year) %>% 
+  summarise(Closures = n())
+  
+```
+
+
 ### Figure 20: Number of Shellfish Area Closures per Year (2014-2024)
 
 ```{r}
@@ -1698,32 +1741,46 @@ seasonal_props <- new_data %>%
     time_period = factor(time_period, levels = c("Early (2014-2016)", "Middle (2017-2019)", 
                                                  "Late (2020-2022)", "Recent (2023-2025)")))
 ```
-
 ### Figure 21: Changes in Seasonal Timing of Closures: 2014-2024
 
 ```{r}
+# Generate Seasonal Variable 
+seasonal_props <- closures %>%
+  rename(date = `Legal Notice Date`) %>% 
+  mutate(date = as.Date(date, format = "%m/%d/%Y"),
+    Season = case_when(
+      month(date) %in% c(12, 1, 2) ~ "Winter",
+      month(date) %in% c(3, 4, 5) ~ "Spring",
+      month(date) %in% c(6, 7, 8) ~ "Summer",
+      month(date) %in% c(9, 10, 11) ~ "Fall"),
+    Year = year(date)) %>% 
+  group_by(Year, Season) %>%
+  summarise(Closures = n(), .groups = "drop") %>%
+  group_by(Year) %>%
+  filter(Year != "2025") %>% 
+  mutate(proportion = Closures / sum(Closures) * 100)
+  
 # 2. VISUALIZATION: Seasonal proportions over time (stacked bar chart)
 p2 <- seasonal_props %>%
-  filter(year != 2025) %>%
-  ggplot(aes(x = year, y = proportion, fill = season)) +
+  ggplot(aes(x = Year, y = proportion, fill = Season)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_brewer(type = "qual", palette = "Set1", name = "Season") +
-  scale_x_continuous(breaks = seq(min(seasonal_props$year[seasonal_props$year != 2025]), 
-                                  max(seasonal_props$year[seasonal_props$year != 2025]), 
-                                  by = 1)) +
+  scale_x_continuous(
+    breaks = seq(
+      min(seasonal_props$Year[seasonal_props$Year != 2025]),
+      max(seasonal_props$Year[seasonal_props$Year != 2025]),
+      by = 1)) +
   labs(title = "Changes in Seasonal Timing of Closures Over Time",
     subtitle = "Percentage of annual closures occurring in each season",
     x = "Year",
     y = "Percentage of Annual Closures (%)",
     caption = "Stacked bar chart showing seasonal distribution") +
   theme_minimal() +
-  theme(
-    plot.title = element_text(size = 14, face = "bold"),
+  theme(plot.title = element_text(size = 14, face = "bold"),
     legend.position = "right",
     axis.text.x = element_text(angle = 45, hjust = 1))
 
 print(p2)
 ```
-
 
 # End of Code
