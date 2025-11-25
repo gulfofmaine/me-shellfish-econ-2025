@@ -513,6 +513,7 @@ PPPMonthScaledPounds2015
 
 #ggsave(filename = "PPPMonthScaledPounds2015.jpeg", plot = PPPMonthScaledPounds2015, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
+
 # Figure 9: Create a Percentage Difference in Total Pounds Year-Over-Year
 
 ```{r}
@@ -1677,7 +1678,7 @@ olsreg <- lm(log(total_pounds) ~ mean_MLLW + Region, data = tidaldata_weekly)
 summary(olsreg)
 ```
 
-## Merge in Closure Data 
+## Merge in Closure Data
 
 ```{r}
 closures <- read_excel("Waterquality_rainfall_only.xlsx")
@@ -1694,7 +1695,6 @@ closures_per_year <- closures_per_year %>%
   summarise(Closures = n())
   
 ```
-
 
 ### Figure 20: Number of Shellfish Area Closures per Year (2014-2024)
 
@@ -1715,9 +1715,10 @@ p1 <- ggplot(closures_per_year, aes(x = factor(Year), y = Closures)) +
 
 print(p1)
 
-ggsave("yearly_closures.png", p1, width = 15, height = 12, dpi = 300, bg = "white")
+ggsave("yearly_closures.png", p1, width = 6, height = 4, dpi = 300, bg = "white")
 
 ```
+
 ### Figure 21: Changes in Seasonal Timing of Closures: 2014-2024
 
 ```{r}
@@ -1741,9 +1742,12 @@ seasonal_props <- closures %>%
 p2 <- seasonal_props %>%
   ggplot(aes(x = Year, y = proportion, fill = Season)) +
   geom_bar(stat = "identity", position = "stack") +
-  scale_fill_brewer(type = "qual", palette = "Set1", name = "Season") +
-  scale_x_continuous(
-    breaks = seq(
+  scale_fill_manual(values = c("Winter" = "#b94a40",
+    "Spring" = "#00608a",
+    "Summer" = "#ebcb27",
+    "Fall" = "#773891"),
+  name = "Season") +
+  scale_x_continuous(breaks = seq(
       min(seasonal_props$Year[seasonal_props$Year != 2025]),
       max(seasonal_props$Year[seasonal_props$Year != 2025]),
       by = 1)) +
@@ -1759,7 +1763,8 @@ p2 <- seasonal_props %>%
 
 print(p2)
 
-ggsave("seasonal_props.png", p2, width = 15, height = 12, dpi = 300, bg = "white")
+ggsave("seasonal_props.png", p2, width = 6, height = 4, dpi = 300, bg = "white")
+
 ```
 
 # End of Code
