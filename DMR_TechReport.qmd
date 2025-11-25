@@ -1715,31 +1715,8 @@ p1 <- ggplot(closures_per_year, aes(x = factor(Year), y = Closures)) +
 
 print(p1)
 
-library(lubridate)
+ggsave("yearly_closures.png", p1, width = 15, height = 12, dpi = 300, bg = "white")
 
-# Prepare the data with seasonal and temporal variables
-seasonal_props <- new_data %>%
-  mutate(
-    date = mdy(`Legal Notice Date`),  # Parse mm/dd/yyyy format
-    year = year(date),
-    month = month(date),
-    day_of_year = yday(date),
-    month_name = month(date, label = TRUE, abbr = TRUE),
-    season = case_when(
-      month %in% c(12, 1, 2) ~ "Winter",
-      month %in% c(3, 4, 5) ~ "Spring", 
-      month %in% c(6, 7, 8) ~ "Summer",
-      month %in% c(9, 10, 11) ~ "Fall"
-    ),
-    season = factor(season, levels = c("Winter", "Spring", "Summer", "Fall")),
-    # Create time periods for analysis
-    time_period = case_when(
-      year <= 2016 ~ "Early (2014-2016)",
-      year <= 2019 ~ "Middle (2017-2019)",
-      year <= 2022 ~ "Late (2020-2022)",
-      TRUE ~ "Recent (2023-2025)"),
-    time_period = factor(time_period, levels = c("Early (2014-2016)", "Middle (2017-2019)", 
-                                                 "Late (2020-2022)", "Recent (2023-2025)")))
 ```
 ### Figure 21: Changes in Seasonal Timing of Closures: 2014-2024
 
@@ -1781,6 +1758,8 @@ p2 <- seasonal_props %>%
     axis.text.x = element_text(angle = 45, hjust = 1))
 
 print(p2)
+
+ggsave("seasonal_props.png", p2, width = 15, height = 12, dpi = 300, bg = "white")
 ```
 
 # End of Code
