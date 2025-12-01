@@ -1677,6 +1677,39 @@ olsreg <- lm(log(total_pounds) ~ mean_MLLW + Region, data = tidaldata_weekly)
 
 summary(olsreg)
 ```
+# Find Temperature Threshold
+
+```{r}
+# Subset for Southern Region 
+south <- summerfigure_raw %>% 
+  filter(Region == "Southern")
+
+# View Spline Relationship Further 
+m_south <- lm(log_pounds ~ ns(mean_MLLW, df = 3), data = south)
+
+newdat_south <- data.frame(
+  mean_MLLW = seq(
+    min(south$mean_MLLW, na.rm = TRUE),
+    max(south$mean_MLLW, na.rm = TRUE),
+    length.out = 200))
+
+library(numDeriv)
+
+newdat_south$deriv <- grad(
+  func = function(x) {predict(m_south, newdata = data.frame(mean_MLLW = x))},
+  x = newdat_south$mean_MLLW)
+
+# Threshold set to 5% most-negative slope values (steepest drop)
+threshold_south <- newdat_south[newdat_south$deriv < quantile(newdat_south$deriv, 0.05), ]
+
+head(threshold_south) # 2.86 ft MLLW at 5% (-0.474), 1.5ft MLLW is -0.307 slope
+
+ggplot(newdat_south, aes(mean_MLLW, deriv)) +
+  geom_line() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(x = "Mean MLLW", y = "Derivative (Slope of Log Pounds)")
+
+```
 
 ## Merge in Closure Data
 
@@ -1685,7 +1718,43 @@ closures <- read_excel("Waterquality_rainfall_only.xlsx")
 
 closures$`Legal Notice Date` <- as.Date(closures$`Legal Notice Date`, format = "%m/%d/%Y")
 
-closures_per_year <- closures %>% 
+# Helper function: expand letter ranges (e.g., WA-WD → WA, WB, WC, WD)
+# Function to expand area letter ranges (e.g., WA-WD → WA WB WC WD)
+# Function to expand letter ranges (WA-WD → WA WB WC WD)
+expand_range <- function(x) {
+  bounds <- str_split(x, "-", simplify = TRUE)
+  start <- bounds[1]
+  end   <- bounds[2]
+
+  prefix <- str_sub(start, 1, 1)
+  start_letter <- str_sub(start, 2, 2)
+  end_letter   <- str_sub(end,   2, 2)
+
+  letters_seq <- LETTERS[match(start_letter, LETTERS) : match(end_letter, LETTERS)]
+  paste0(prefix, letters_seq)
+}
+
+closures_expanded <- closures %>%
+  # Split on commas OR semicolons
+  separate_rows(`Growing Area`, sep = "[,;]\\s*") %>%
+  mutate(`Growing Area` = str_trim(`Growing Area`)) %>%
+  mutate(`Growing Area` = map(`Growing Area`, function(area) {
+
+    if (is.na(area) || area == "") return(NA_character_)
+
+    # Expand ranges like WA-WK
+    if (str_detect(area, "^[A-Z][A-Z]-[A-Z][A-Z]$")) {
+      return(expand_range(area))
+    }
+
+    # Otherwise keep original (e.g., WZ)
+    return(area)
+  })) %>%
+  unnest(`Growing Area`)
+
+closures_expanded
+
+closures_per_year <- closures_expanded %>% 
   rename(date = `Legal Notice Date`) 
 
 closures_per_year <- closures_per_year %>% 
@@ -1751,7 +1820,7 @@ p2 <- seasonal_props %>%
       min(seasonal_props$Year[seasonal_props$Year != 2025]),
       max(seasonal_props$Year[seasonal_props$Year != 2025]),
       by = 1)) +
-  labs(title = "Changes in Seasonal Timing of Closures Over Time",
+  labs(title = "Changes in Seasonal Timing of Closures: 2014-2024",
     subtitle = "Percentage of annual closures occurring in each season",
     x = "Year",
     y = "Percentage of Annual Closures (%)",
