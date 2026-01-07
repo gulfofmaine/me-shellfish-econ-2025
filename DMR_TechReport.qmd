@@ -1677,6 +1677,7 @@ olsreg <- lm(log(total_pounds) ~ mean_MLLW + Region, data = tidaldata_weekly)
 
 summary(olsreg)
 ```
+
 # Find Temperature Threshold
 
 ```{r}
@@ -1784,7 +1785,7 @@ p1 <- ggplot(closures_per_year, aes(x = factor(Year), y = Closures)) +
 
 print(p1)
 
-ggsave("yearly_closures.png", p1, width = 6, height = 4, dpi = 300, bg = "white")
+#ggsave("yearly_closures.png", p1, width = 6, height = 4, dpi = 300, bg = "white")
 
 ```
 
@@ -1832,8 +1833,50 @@ p2 <- seasonal_props %>%
 
 print(p2)
 
-ggsave("seasonal_props.png", p2, width = 6, height = 4, dpi = 300, bg = "white")
+#ggsave("seasonal_props.png", p2, width = 6, height = 4, dpi = 300, bg = "white")
 
 ```
+
+### Stacked Bar Chart for Seasonal Count of Closures 
+
+```{r}
+seasonal_props_count <- closures %>%
+  rename(date = `Legal Notice Date`) %>% 
+  mutate(date = as.Date(date, format = "%m/%d/%Y"),
+    Season = case_when(
+      month(date) %in% c(12, 1, 2) ~ "Winter",
+      month(date) %in% c(3, 4, 5) ~ "Spring",
+      month(date) %in% c(6, 7, 8) ~ "Summer",
+      month(date) %in% c(9, 10, 11) ~ "Fall"),
+    Year = year(date)) %>% 
+  group_by(Year, Season) %>%
+  summarise(Closures = n(), .groups = "drop") %>%
+  group_by(Year) %>%
+  filter(Year != "2025")
+
+p3 <- ggplot(seasonal_props_count, aes(x = Year, y = Closures, fill = Season)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("Winter" = "#b94a40",
+    "Spring" = "#00608a",
+    "Summer" = "#ebcb27",
+    "Fall" = "#773891"),
+    name = "Season") +
+   scale_x_continuous(breaks = seq(
+      min(seasonal_props$Year[seasonal_props$Year != 2025]),
+      max(seasonal_props$Year[seasonal_props$Year != 2025]),
+      by = 1)) +
+  labs(title = "Changes in Seasonal Timing of Closures: 2014-2024",
+    x = "Year",
+    y = "Number of Closures",
+    fill = "Season") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"),
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("seasonal_closures.png", p3, width = 6, height = 4, dpi = 300, bg = "white")
+
+```
+
 
 # End of Code
