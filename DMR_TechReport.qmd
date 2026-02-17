@@ -75,6 +75,31 @@ gmri_colors <- c(
 `dark gray`          = "#535353")
 
 ```
+# Figure 2: Supply and Demand Relationship 
+
+```{r}
+library(devtools)
+library(econocharts)
+
+# Add custom curves
+demand1 <- data.frame(Hmisc::bezier(c(1, 3, 9),
+                                    c(9, 3, 1))) 
+demand2 <- data.frame(Hmisc::bezier(c(2.5, 4.5, 10.5),
+                                    c(10.5, 4.5, 2.5))) 
+supply2 <- data.frame(Hmisc::bezier(c(1, 8, 9),
+                                    c(1, 5, 9))) 
+supply1 <-  data.frame(Hmisc::bezier(c(2.5, 9, 10),
+                                    c(1, 5, 9))) 
+# Supply and demand curves and arrows
+econ_plot <- sdcurve(demand1, supply1, demand1, supply2,
+        names = c("D[2]", "S[1]","D[1]", "S[2]"),
+        linescol = c(1, 2, 1, 4)) +
+  labs(x = "Quantity", y = "Price") +
+  theme(size = 14)
+
+econ_plot
+
+```
 
 # Figure 3: Regional Map of Maine
 
