@@ -49,9 +49,6 @@ portdata <- read_csv("portdata.csv")
 stormdata <- read_csv("stormdata.csv")
 stormdata_filtered <- read_csv("stormdata2.csv")
 
-# World Uncertainty Index 
-uncertaintyindex <- read_csv("world_uncertainty_index.csv")
-
 # Soft-Shell Clam Data
 portdataSS <- portdata[portdata$COMMON_NAME %in% "clam soft",]
 stormdataSS <- stormdata[stormdata$COMMON_NAME %in% "clam soft",]
@@ -369,7 +366,6 @@ STMonthFPI <- STMonthFPI  %>%
 STMonthFPI <- STMonthFPI %>% 
   mutate(fpiprice = ManualFPI*2.53)
 ```
-
 # Merge FPI-adjusted Prices into portdataSS
 
 ```{r}
@@ -407,20 +403,18 @@ PPPMonthScaledPounds2023 <- ggplot(STMonthSoftShell2023, aes(x = Month)) +
       ~ . * scaling_factor,
       name = "Total Pounds Harvested",
       labels = scales::comma)) +
-  ggtitle("2023 Monthly Soft-Shell Landings and Mean Price") +
+  #ggtitle("2023 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2023") +
   theme_minimal() +
   theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
     axis.title.y.right = element_text(face = "bold", color = "#00608a"),
     axis.title.x = element_text(face = "bold"),
     axis.text = element_text(color = "black"),
-    plot.title = element_text(face = "bold"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank())
+    plot.title = element_text(face = "bold"))
 
 PPPMonthScaledPounds2023
 
-#ggsave(filename = "PPPMonthScaledPounds2023.jpeg", plot = PPPMonthScaledPounds2023, device = "jpeg", width = 6, height = 4, dpi = 300)
+ggsave(filename = "PPPMonthScaledPounds2023.jpeg", plot = PPPMonthScaledPounds2023, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
 
 # Figure 7: Plot Pounds with Prices (FPI-adj December 2023): 2021
@@ -451,7 +445,7 @@ PPPMonthScaledPounds2021 <- ggplot(STMonthSoftShell2021, aes(x = Month)) +
     sec.axis = sec_axis(~ . * scaling_factor,
       name = "Total Pounds Harvested",
       labels = scales::comma)) +
-  ggtitle("2021 Monthly Soft-Shell Landings and Mean Price") +
+  #ggtitle("2021 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2021") +
   theme_minimal() +
   theme(
@@ -459,9 +453,7 @@ PPPMonthScaledPounds2021 <- ggplot(STMonthSoftShell2021, aes(x = Month)) +
     axis.title.y.right = element_text(face = "bold", color = "#00608a"),
     axis.title.x = element_text(face = "bold"),
     axis.text = element_text(color = "black"),
-    plot.title = element_text(face = "bold"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank())
+    plot.title = element_text(face = "bold"))
 
 PPPMonthScaledPounds2021
 
@@ -498,20 +490,18 @@ PPPMonthScaledPounds2015 <- ggplot(STMonthSoftShell2015, aes(x = Month)) +
   name = "Total Pounds Harvested",
   labels = scales::comma,
   breaks = c(0, 500000, 1000000, 1500000, 2000000))) +
-  ggtitle("2015 Monthly Soft-Shell Landings and Mean Price") +
+  #ggtitle("2015 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2015") +
   theme_minimal() +
   theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
     axis.title.y.right = element_text(face = "bold", color = "#00608a"),
     axis.title.x = element_text(face = "bold"),
     axis.text = element_text(color = "black"),
-    plot.title = element_text(face = "bold"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank())
+    plot.title = element_text(face = "bold"))
 
 PPPMonthScaledPounds2015
 
-#ggsave(filename = "PPPMonthScaledPounds2015.jpeg", plot = PPPMonthScaledPounds2015, device = "jpeg", width = 6, height = 4, dpi = 300)
+ggsave(filename = "PPPMonthScaledPounds2015.jpeg", plot = PPPMonthScaledPounds2015, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
 
 # Figure 9: Create a Percentage Difference in Total Pounds Year-Over-Year
@@ -526,7 +516,7 @@ total_pounds_year_percentage <- portdataSS %>%
 total_pounds_year_percentage$Year <- as.Date(paste(total_pounds_year_percentage$Year, "-01-01", sep = ""), format = "%Y-%m-%d")
 
 year_over_year <- ggplot(total_pounds_year_percentage, aes(x = Year, y = percent_change)) +
-  geom_bar(stat = "identity", fill = "#07a3b7") +
+  geom_bar(stat = "identity", fill = "#00608a") +
   geom_text(aes(label = ifelse(!is.na(percent_change), paste0(percent_change, "%"), "")),
             size = 3, 
             vjust = ifelse(total_pounds_year_percentage$percent_change >= 0, -0.5, 1.5),
@@ -542,7 +532,7 @@ year_over_year <- ggplot(total_pounds_year_percentage, aes(x = Year, y = percent
     axis.title = element_text(face = "bold", color = "black"),
     plot.title = element_text(face = "bold", color = "black"),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank())
+    panel.grid.major.x = element_line())
 
 year_over_year
 
@@ -616,14 +606,14 @@ MonthlyMeanPPP <- portdataSS %>%
   arrange(match(Month, month.abb))
 
 PPPMonthBar <- ggplot(MonthlyMeanPPP, aes(x = Month, y = mean_PPP)) + 
-  geom_bar(stat = "identity", fill = "#07a3b7") + 
+  geom_bar(stat = "identity", fill = "#00608a") + 
   geom_errorbar(aes(ymin = mean_PPP - SD_MeanPrice, ymax = mean_PPP + SD_MeanPrice), width = 0.2) +
   #ggtitle("Mean Soft-Shell Landing Price per Pound by Month (2006–2023)") + 
   ylab("Price per Pound \n(2023 FPI-adj)") + xlab("") + 
   geom_text(aes(y = mean_PPP - SD_MeanPrice - 0.2, label = round(mean_PPP, 2)), size = 3, vjust = 0.75) +
   theme_minimal() +
   theme(panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank())
+    panel.grid.major.x = element_line())
 
 PPPMonthBar
 
@@ -1425,7 +1415,7 @@ combined_landings$storm <- dplyr::recode(combined_landings$storm,
                                    "stormy" = "Stormy",
                                    "notstormy" = "Not Stormy")
 
-gmri_cols <- c("Stormy" = "#004966", "Not Stormy" = "#ebcb27")
+gmri_cols <- c("Stormy" = "#b94a40", "Not Stormy" = "#057872")
 
 # Boxplot comparing stormy and not stormy landings per region
 StormLandings <- ggplot(combined_landings, aes(x = Region, y = total_landings, fill = storm)) +
@@ -1441,7 +1431,7 @@ StormLandings <- ggplot(combined_landings, aes(x = Region, y = total_landings, f
 
 StormLandings
 # Save the plot as a JPEG file
-#ggsave(filename = "StormLandings.jpeg", plot = StormLandings, device = "jpeg", width = 6, height = 4, dpi = 300)
+ggsave(filename = "StormLandings.jpeg", plot = StormLandings, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 
 ```
