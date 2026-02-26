@@ -175,7 +175,6 @@ setwd("C:/Users/BenCotton/Desktop")
 #ggsave("Region_Map.png", plot = Regional_Figure, width = 12, height = 10, units = "in", dpi = 300, bg = "white")
 
 ```
-
 # Fisheries Overview
 
 ## Figure 5: Soft-Shell Landings and Value: 2006-2023
@@ -222,6 +221,142 @@ landings_value_SS
 #ggsave(filename = "landings_value_SS.jpeg", plot = landings_value_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 ```
+
+## Poster Figures 
+```{r}
+# Plot without Legend but Colored Title 
+landings_value_SS <- ggplot(combined_data, aes(x = Year)) +
+  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
+  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
+  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
+  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
+  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
+  scale_y_continuous(
+    name = "Total Pounds (Millions)",
+    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
+  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
+  labs(title = "State of Maine Soft-Shell Clam <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
+    x = "") +
+  theme_economist_white() +
+  theme(plot.title = ggtext::element_markdown(size = 14),
+  legend.position = c(0.15, 0.85),
+  legend.background = element_blank(),
+  legend.box.background = element_blank(),
+  legend.key = element_blank(),
+  legend.text = element_text(size = 8),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  axis.title.y = element_text(size = 10),  
+  axis.text.y  = element_text(size = 8))
+
+landings_value_SS
+
+ggsave(filename = "landings_value_SS.jpeg", plot = landings_value_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+landings_value_NQ <- ggplot(combined_data_NQ, aes(x = Year)) +
+  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
+  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
+  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
+  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
+  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
+  scale_y_continuous(
+    name = "Total Pounds (Millions)",
+    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
+  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
+  labs(title = "State of Maine Northern Quahog <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
+    x = "") +
+  theme_economist_white() +
+  theme(plot.title = ggtext::element_markdown(size = 14),
+  legend.position = c(0.15, 0.85),
+  legend.background = element_blank(),
+  legend.box.background = element_blank(),
+  legend.key = element_blank(),
+  legend.text = element_text(size = 8),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  axis.title.y = element_text(size = 10),   # y-axis label
+  axis.text.y  = element_text(size = 8))
+
+landings_value_NQ
+
+ggsave(filename = "landings_value_NQ.jpeg", plot = landings_value_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+# Plot without Legend but Colored Title 
+landings_value_EO <- ggplot(combined_data_EO, aes(x = Year)) +
+  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
+  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
+  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
+  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
+  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
+  scale_y_continuous(
+    name = "Total Pounds (Millions)",
+    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
+  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
+  labs(title = "State of Maine Eastern Oyster <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
+    x = "") +
+  theme_economist_white() +
+  theme(plot.title = ggtext::element_markdown(size = 14),
+  legend.position = c(0.15, 0.85),
+  legend.background = element_blank(),
+  legend.box.background = element_blank(),
+  legend.key = element_blank(),
+  legend.text = element_text(size = 8),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  axis.title.y = element_text(size = 10),   # y-axis label
+  axis.text.y  = element_text(size = 8))
+
+landings_value_EO
+
+ggsave(filename = "landings_value_EO.jpeg", plot = landings_value_EO, device = "jpeg", width = 6, height = 4, dpi = 300)
+
+intraannual_yr <- ggplot(intra_annual_volatility_all_years, 
+                         aes(x = factor(year), y = volatility, fill = volatility)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  geom_text(aes(label = round(volatility, 2)),
+            size = 3,
+            hjust = -0.1,
+            color = "black") +
+  labs(title = "Intra-Annual Volatility (Within-Year)",
+       x = "",
+       y = "Volatility (SD / Mean Price)") +
+  scale_fill_gradient(
+    low = "#f7c6c6",
+    high = "#b94a40") +
+  guides(fill = "none") + 
+  theme_economist_white() +
+  theme(
+    text = element_text(color = "black"),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(face = "bold", color = "black"),
+    plot.title = element_text(face = "bold", color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  coord_flip(clip = "off") +
+  geom_label(aes(x = "2022",  # Match x-axis factor label for placement
+                 y = max(volatility) + 0.02),
+             label = "Metric:\n < 0.13 (Low Volatility)\n 0.13–0.20\n 0.20–0.30\n 0.30–0.85\n > 0.85 (High Volatility)",
+             hjust = 0,
+             vjust = 4.3,
+             size = 3,
+             fill = "white",
+             label.size = 0.3,
+             color = "black") +
+  expand_limits(y = max(intra_annual_volatility_all_years$volatility) + 0.1)
+
+intraannual_yr
+
+ggsave(filename = "intraannual_yr_flipped.jpeg", plot = intraannual_yr, device = "jpeg", width = 8, height = 6, dpi = 300)
+
+```
+
+
+
+
+
+
+
+
 
 ## Figure 10: Northern Quahog Landings and Value: 2006-2023
 
@@ -391,6 +526,7 @@ STMonthFPI <- STMonthFPI  %>%
 STMonthFPI <- STMonthFPI %>% 
   mutate(fpiprice = ManualFPI*2.53)
 ```
+
 # Merge FPI-adjusted Prices into portdataSS
 
 ```{r}
@@ -1210,8 +1346,7 @@ intraannual_yr <- ggplot(intra_annual_volatility_all_years,
     axis.title = element_text(face = "bold", color = "black"),
     plot.title = element_text(face = "bold", color = "black"),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-  ) +
+    panel.grid.minor = element_blank()) +
   coord_flip(clip = "off") +
   geom_label(aes(x = "2022",  # Match x-axis factor label for placement
                  y = max(volatility) + 0.02),
@@ -1732,11 +1867,12 @@ ggplot(newdat_south, aes(mean_MLLW, deriv)) +
 ```{r}
 closures <- read_excel("Waterquality_rainfall_only.xlsx")
 
+closures <- closures %>% 
+  dplyr::select(ID, `Legal Notice Date`, `Growing Area`, Description)
+
 closures$`Legal Notice Date` <- as.Date(closures$`Legal Notice Date`, format = "%m/%d/%Y")
 
-# Helper function: expand letter ranges (e.g., WA-WD → WA, WB, WC, WD)
-# Function to expand area letter ranges (e.g., WA-WD → WA WB WC WD)
-# Function to expand letter ranges (WA-WD → WA WB WC WD)
+# Expand letter ranges (e.g., WA-WD → WA, WB, WC, WD)
 expand_range <- function(x) {
   bounds <- str_split(x, "-", simplify = TRUE)
   start <- bounds[1]
@@ -1751,19 +1887,13 @@ expand_range <- function(x) {
 }
 
 closures_expanded <- closures %>%
-  # Split on commas OR semicolons
-  separate_rows(`Growing Area`, sep = "[,;]\\s*") %>%
+  separate_rows(`Growing Area`, sep = "[,;]\\s*") %>% # Split on commas OR semicolons
   mutate(`Growing Area` = str_trim(`Growing Area`)) %>%
   mutate(`Growing Area` = map(`Growing Area`, function(area) {
-
     if (is.na(area) || area == "") return(NA_character_)
-
-    # Expand ranges like WA-WK
     if (str_detect(area, "^[A-Z][A-Z]-[A-Z][A-Z]$")) {
       return(expand_range(area))
     }
-
-    # Otherwise keep original (e.g., WZ)
     return(area)
   })) %>%
   unnest(`Growing Area`)
@@ -1808,7 +1938,7 @@ print(p1)
 
 ```{r}
 # Generate Seasonal Variable 
-seasonal_props <- closures %>%
+seasonal_props <- closures_expanded %>%
   rename(date = `Legal Notice Date`) %>% 
   mutate(date = as.Date(date, format = "%m/%d/%Y"),
     Season = case_when(
@@ -1855,7 +1985,7 @@ print(p2)
 ### Stacked Bar Chart for Seasonal Count of Closures 
 
 ```{r}
-seasonal_props_count <- closures %>%
+seasonal_props_count <- closures_expanded %>%
   rename(date = `Legal Notice Date`) %>% 
   mutate(date = as.Date(date, format = "%m/%d/%Y"),
     Season = case_when(
@@ -1881,7 +2011,7 @@ p3 <- ggplot(seasonal_props_count, aes(x = Year, y = Closures, fill = Season)) +
       max(seasonal_props$Year[seasonal_props$Year != 2025]),
       by = 1)) +
   labs(title = "Changes in Seasonal Timing of Closures: 2014-2024",
-    x = "Year",
+    x = "",
     y = "Number of Closures",
     fill = "Season") +
   theme_minimal() +
@@ -1889,7 +2019,9 @@ p3 <- ggplot(seasonal_props_count, aes(x = Year, y = Closures, fill = Season)) +
     legend.position = "right",
     axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggsave("seasonal_closures.png", p3, width = 6, height = 4, dpi = 300, bg = "white")
+p3
+
+#ggsave("seasonal_closures.png", p3, width = 6, height = 4, dpi = 300, bg = "white")
 
 ```
 
