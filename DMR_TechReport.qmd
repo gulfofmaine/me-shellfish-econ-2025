@@ -221,143 +221,6 @@ landings_value_SS
 #ggsave(filename = "landings_value_SS.jpeg", plot = landings_value_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 ```
-
-## Poster Figures 
-```{r}
-# Plot without Legend but Colored Title 
-landings_value_SS <- ggplot(combined_data, aes(x = Year)) +
-  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
-  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
-  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
-  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
-  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
-  scale_y_continuous(
-    name = "Total Pounds (Millions)",
-    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
-  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
-  labs(title = "State of Maine Soft-Shell Clam <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
-    x = "") +
-  theme_economist_white() +
-  theme(plot.title = ggtext::element_markdown(size = 14),
-  legend.position = c(0.15, 0.85),
-  legend.background = element_blank(),
-  legend.box.background = element_blank(),
-  legend.key = element_blank(),
-  legend.text = element_text(size = 8),
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  axis.title.y = element_text(size = 10),  
-  axis.text.y  = element_text(size = 8))
-
-landings_value_SS
-
-ggsave(filename = "landings_value_SS.jpeg", plot = landings_value_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
-
-landings_value_NQ <- ggplot(combined_data_NQ, aes(x = Year)) +
-  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
-  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
-  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
-  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
-  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
-  scale_y_continuous(
-    name = "Total Pounds (Millions)",
-    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
-  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
-  labs(title = "State of Maine Northern Quahog <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
-    x = "") +
-  theme_economist_white() +
-  theme(plot.title = ggtext::element_markdown(size = 14),
-  legend.position = c(0.15, 0.85),
-  legend.background = element_blank(),
-  legend.box.background = element_blank(),
-  legend.key = element_blank(),
-  legend.text = element_text(size = 8),
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  axis.title.y = element_text(size = 10),   # y-axis label
-  axis.text.y  = element_text(size = 8))
-
-landings_value_NQ
-
-ggsave(filename = "landings_value_NQ.jpeg", plot = landings_value_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
-
-# Plot without Legend but Colored Title 
-landings_value_EO <- ggplot(combined_data_EO, aes(x = Year)) +
-  geom_col(aes(y = total_pounds / 1e6, fill = "Landings"), width = 0.6) +
-  geom_line(aes(y = total_value / 1e6, color = "Value"), size = 0.75) +
-  geom_point(aes(y = total_value / 1e6, color = "Value"), size = 1.5) +
-  scale_fill_manual(name = NULL, values = c("Landings" = "#00608a")) +
-  scale_color_manual(name = NULL, values = c("Value" = "#ea4f12")) +
-  scale_y_continuous(
-    name = "Total Pounds (Millions)",
-    sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
-  scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
-  labs(title = "State of Maine Eastern Oyster <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
-    x = "") +
-  theme_economist_white() +
-  theme(plot.title = ggtext::element_markdown(size = 14),
-  legend.position = c(0.15, 0.85),
-  legend.background = element_blank(),
-  legend.box.background = element_blank(),
-  legend.key = element_blank(),
-  legend.text = element_text(size = 8),
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  axis.title.y = element_text(size = 10),   # y-axis label
-  axis.text.y  = element_text(size = 8))
-
-landings_value_EO
-
-ggsave(filename = "landings_value_EO.jpeg", plot = landings_value_EO, device = "jpeg", width = 6, height = 4, dpi = 300)
-
-intraannual_yr <- ggplot(intra_annual_volatility_all_years, 
-                         aes(x = factor(year), y = volatility, fill = volatility)) +
-  geom_bar(stat = "identity", width = 0.8) +
-  geom_text(aes(label = round(volatility, 2)),
-            size = 3,
-            hjust = -0.1,
-            color = "black") +
-  labs(title = "Intra-Annual Volatility (Within-Year)",
-       x = "",
-       y = "Volatility (SD / Mean Price)") +
-  scale_fill_gradient(
-    low = "#f7c6c6",
-    high = "#b94a40") +
-  guides(fill = "none") + 
-  theme_economist_white() +
-  theme(
-    text = element_text(color = "black"),
-    axis.text = element_text(color = "black"),
-    axis.title = element_text(face = "bold", color = "black"),
-    plot.title = element_text(face = "bold", color = "black"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()) +
-  coord_flip(clip = "off") +
-  geom_label(aes(x = "2022",  # Match x-axis factor label for placement
-                 y = max(volatility) + 0.02),
-             label = "Metric:\n < 0.13 (Low Volatility)\n 0.13–0.20\n 0.20–0.30\n 0.30–0.85\n > 0.85 (High Volatility)",
-             hjust = 0,
-             vjust = 4.3,
-             size = 3,
-             fill = "white",
-             label.size = 0.3,
-             color = "black") +
-  expand_limits(y = max(intra_annual_volatility_all_years$volatility) + 0.1)
-
-intraannual_yr
-
-ggsave(filename = "intraannual_yr_flipped.jpeg", plot = intraannual_yr, device = "jpeg", width = 8, height = 6, dpi = 300)
-
-```
-
-
-
-
-
-
-
-
-
 ## Figure 10: Northern Quahog Landings and Value: 2006-2023
 
 ```{r}
@@ -1714,7 +1577,7 @@ summerplot <- ggplot(summerfigure_raw, aes(x = mean_MLLW, y = log_pounds)) +
   #geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = FALSE, color = gmri_cols("gmri blue")) +
   stat_smooth(method = "lm",
               formula = y ~ ns(x, df = 3), se = TRUE, fullrange = FALSE,
-              linetype = "solid", color = "#057872") +
+              linetype = "solid", color = "#00608a") +
   facet_wrap(~ Region) +
   labs(x = NULL,
     y = "Total Pounds (Log-Scale)") +
@@ -1745,12 +1608,12 @@ binned_data <- summerfigure_raw %>%
 
 # Step 2: Plot with geom_step
 stepfunc_plot <- ggplot(binned_data, aes(x = mean_MLLW_center, y = avg_log_pounds)) +
-  geom_step(direction = "hv", color = "#057872") +
+  geom_step(direction = "hv", color = "#00608a") +
   facet_wrap(~ Region) +
   labs(
     x = NULL,
     y = "Average Total Pounds (log scale)") +
-  theme_bw() +
+  theme_economist_white() +
    theme(panel.background = element_rect(fill = "white", color = NA),
     plot.background = element_rect(fill = "white", color = NA),
     panel.grid.major = element_blank(), 
@@ -1777,18 +1640,17 @@ tideheights_summer <- tidaldataraw %>%
   
 tidehisto_summer <- tideheights_summer %>%   
   ggplot(aes(x = LW)) +
-  geom_histogram(binwidth = 0.5, fill = "#057872", color = "white") +
+  geom_histogram(binwidth = 0.5, fill = "#00608a", color = "white") +
   facet_wrap(~ Region) +  
   scale_x_continuous(limits = c(-2, 4)) +
   labs(x = "Tidal Low Water Level (ft. MLLW)",
        y = "Number of Days") +
-  theme_bw() +
+  theme_economist_white() +
   theme(panel.background = element_rect(fill = "white", color = NA),
     plot.background = element_rect(fill = "white", color = NA),
     panel.grid.major = element_blank(),  
     panel.grid.minor = element_blank(),  
     strip.background = element_rect(fill = "white", color = "black"),
-    
     axis.text = element_text(size = 20),
     axis.title = element_text(size = 22),
     strip.text = element_text(size = 22),
@@ -1800,7 +1662,7 @@ tidehisto
 # Combine plots with patchwork
 Combined_Plot_Summer <- summerplot / tidehisto_summer + 
   plot_layout(heights = c(2, 1)) + 
-  plot_annotation(#title = "Estimated Trend of Summer Landings over Mean Low Water \nUsing Natural Splines (df = 3)",
+  plot_annotation(title = "Estimated Trend of Summer Landings over Mean Low Water \nUsing Natural Splines (df = 3)",
   theme = theme(plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
                 theme(axis.text = element_text(size = 20),
                       axis.title = element_text(size = 22),
@@ -1810,7 +1672,7 @@ Combined_Plot_Summer <- summerplot / tidehisto_summer +
 
 Combined_Plot_Summer
 
-#ggsave("Combined_Plot_Summer.png", Combined_Plot_Summer, width = 15, height = 12, dpi = 300, bg = "white")
+ggsave("Combined_Plot_Summer.png", Combined_Plot_Summer, width = 15, height = 12, dpi = 300, bg = "white")
 
 ```
 
