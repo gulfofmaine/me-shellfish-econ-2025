@@ -37,6 +37,7 @@ library(scales)
 library(gmRi)
 library(ggtext)
 library(readxl)
+library(splines)
 ```
 
 ## Data
@@ -94,10 +95,14 @@ supply1 <-  data.frame(Hmisc::bezier(c(2.5, 9, 10),
 econ_plot <- sdcurve(demand1, supply1, demand1, supply2,
         names = c("D[2]", "S[1]","D[1]", "S[2]"),
         linescol = c(1, 2, 1, 4)) +
-  labs(x = "Quantity", y = "Price") +
+  labs(x = "Quantity", y = "Price",  
+       caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme(size = 14)
 
 econ_plot
+
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave("Figure_2.png", plot = econ_plot, width = 12, height = 10, units = "in", dpi = 300, bg = "white")
 
 ```
 
@@ -167,12 +172,13 @@ Regional_Figure <- ggplot() +
   guides(color = guide_legend(override.aes = list(size = 4))) +
   labs(x = NULL, y = NULL,
        size = "Total Pounds",
-       color = "Region")
+       color = "Region",
+       caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute")
 
 Regional_Figure
 
-setwd("C:/Users/BenCotton/Desktop")
-#ggsave("Region_Map.png", plot = Regional_Figure, width = 12, height = 10, units = "in", dpi = 300, bg = "white")
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave("Figure_3.png", plot = Regional_Figure, width = 12, height = 10, units = "in", dpi = 300, bg = "white")
 
 ```
 # Fisheries Overview
@@ -207,18 +213,22 @@ landings_value_SS <- ggplot(combined_data, aes(x = Year)) +
     sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
   scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
   labs(title = "State of Maine Soft-Shell <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
-    x = "Year") +
+    x = "",
+    caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal() +
   theme(plot.title = ggtext::element_markdown(size = 14),
-  legend.position = c(0.15, 0.85),
-  legend.background = element_blank(),
-  legend.box.background = element_blank(),
-  legend.key = element_blank(),
-  legend.text = element_text(size = 8))
+        plot.caption = element_text(size = 8, color = "gray40"),
+        legend.position = c(0.15, 0.85),
+        legend.background = element_blank(),
+        legend.box.background = element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(size = 8))
 
 landings_value_SS 
 
-#ggsave(filename = "landings_value_SS.jpeg", plot = landings_value_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave("Figure_5.png", plot = landings_value_SS , width = 6, height = 4, units = "in", dpi = 300, bg = "white")
+
 
 ```
 ## Figure 10: Northern Quahog Landings and Value: 2006-2023
@@ -241,8 +251,6 @@ portdataNQ_region <- portdataNQ %>%
 portdataEO_region <- portdataEO %>% 
   group_by(Year) %>% 
   dplyr::summarize(total_pounds = sum(POUNDS, na.rm = TRUE))
-
-
 
 totalpoundshisto_NQ <- portdataNQ %>% 
   group_by(Year) %>% 
@@ -268,18 +276,21 @@ landings_value_NQ <- ggplot(combined_data_NQ, aes(x = Year)) +
     sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
   scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
   labs(title = "State of Maine Northern Quahog <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
-    x = "Year") +
+    x = "",
+    caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal() +
   theme(plot.title = ggtext::element_markdown(size = 14),
-  legend.position = c(0.15, 0.85),
-  legend.background = element_blank(),
-  legend.box.background = element_blank(),
-  legend.key = element_blank(),
-  legend.text = element_text(size = 8))
+        plot.caption = element_text(size = 8, color = "gray40"),
+        legend.position = c(0.15, 0.85),
+        legend.background = element_blank(),
+        legend.box.background = element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(size = 8))
 
 landings_value_NQ
 
-#ggsave(filename = "landings_value_NQ.jpeg", plot = landings_value_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_10.jpeg", plot = landings_value_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
 
 ## Figure 11: Eastern Oyster Landings and Value: 2006-2023
@@ -309,18 +320,21 @@ landings_value_EO <- ggplot(combined_data_EO, aes(x = Year)) +
     sec.axis = sec_axis(~ ., name = "Total Value (Millions)")) +
   scale_x_continuous(breaks = seq(2006, 2023, by = 2)) +
   labs(title = "State of Maine Eastern Oyster <span style='color:#00608a;'>**Landings**</span> and <span style='color:#ea4f12;'>**Value**</span>",
-    x = "Year") +
+    x = "",
+    caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal() +
   theme(plot.title = ggtext::element_markdown(size = 14),
-  legend.position = c(0.15, 0.85),
-  legend.background = element_blank(),
-  legend.box.background = element_blank(),
-  legend.key = element_blank(),
-  legend.text = element_text(size = 8))
+        plot.caption = element_text(size = 8, color = "gray40"),
+        legend.position = c(0.15, 0.85),
+        legend.background = element_blank(),
+        legend.box.background = element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(size = 8))
 
 landings_value_EO
 
-#ggsave(filename = "landings_value_EO.jpeg", plot = landings_value_EO, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_11.jpeg", plot = landings_value_EO, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
 
 # FPI Calculations
@@ -350,7 +364,6 @@ FPI_2024 <- publicdataSS %>%
             mean_PPP = mean(value/weight, na.rm = TRUE))
 
 ```
-
 ## Create Monthly FPI for Soft-Shell Clams
 
 ```{r}
@@ -429,16 +442,19 @@ PPPMonthScaledPounds2023 <- ggplot(STMonthSoftShell2023, aes(x = Month)) +
       labels = scales::comma)) +
   #ggtitle("2023 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2023") +
+  labs(caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal() +
   theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
-    axis.title.y.right = element_text(face = "bold", color = "#00608a"),
-    axis.title.x = element_text(face = "bold"),
-    axis.text = element_text(color = "black"),
-    plot.title = element_text(face = "bold"))
+        axis.title.y.right = element_text(face = "bold", color = "#00608a"),
+        axis.title.x = element_text(face = "bold"),
+        axis.text = element_text(color = "black"),
+        plot.title = element_text(face = "bold"),
+        plot.caption = element_text(size = 8, color = "gray40"))
 
 PPPMonthScaledPounds2023
 
-ggsave(filename = "PPPMonthScaledPounds2023.jpeg", plot = PPPMonthScaledPounds2023, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_6.jpeg", plot = PPPMonthScaledPounds2023, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
 
 # Figure 7: Plot Pounds with Prices (FPI-adj December 2023): 2021
@@ -471,17 +487,20 @@ PPPMonthScaledPounds2021 <- ggplot(STMonthSoftShell2021, aes(x = Month)) +
       labels = scales::comma)) +
   #ggtitle("2021 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2021") +
+  labs(caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal() +
   theme(
     axis.title.y = element_text(face = "bold", color = "#ea4f12"),
     axis.title.y.right = element_text(face = "bold", color = "#00608a"),
     axis.title.x = element_text(face = "bold"),
     axis.text = element_text(color = "black"),
-    plot.title = element_text(face = "bold"))
+    plot.title = element_text(face = "bold"),
+    plot.caption = element_text(size = 8, color = "gray40"))
 
 PPPMonthScaledPounds2021
 
-#ggsave(filename = "PPPMonthScaledPounds2021.jpeg", plot = PPPMonthScaledPounds2021, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_7.jpeg", plot = PPPMonthScaledPounds2021, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
 
 # Figure 8: Plot Pounds with Prices (FPI-adj December 2023): 2015
@@ -516,16 +535,19 @@ PPPMonthScaledPounds2015 <- ggplot(STMonthSoftShell2015, aes(x = Month)) +
   breaks = c(0, 500000, 1000000, 1500000, 2000000))) +
   #ggtitle("2015 Monthly Soft-Shell Landings and Mean Price") +
   xlab("2015") +
+  labs(caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal() +
   theme(axis.title.y = element_text(face = "bold", color = "#ea4f12"),
     axis.title.y.right = element_text(face = "bold", color = "#00608a"),
     axis.title.x = element_text(face = "bold"),
     axis.text = element_text(color = "black"),
-    plot.title = element_text(face = "bold"))
+    plot.title = element_text(face = "bold"),
+    plot.caption = element_text(size = 8, color = "gray40"))
 
 PPPMonthScaledPounds2015
 
-ggsave(filename = "PPPMonthScaledPounds2015.jpeg", plot = PPPMonthScaledPounds2015, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_8.jpeg", plot = PPPMonthScaledPounds2015, device = "jpeg", width = 6, height = 4, dpi = 300)
 ```
 
 # Figure 9: Create a Percentage Difference in Total Pounds Year-Over-Year
@@ -545,22 +567,26 @@ year_over_year <- ggplot(total_pounds_year_percentage, aes(x = Year, y = percent
             size = 3, 
             vjust = ifelse(total_pounds_year_percentage$percent_change >= 0, -0.5, 1.5),
             color = "black") +
-  scale_x_date(
-    breaks = as.Date(c("2006-01-01", "2008-01-01","2010-01-01", "2012-01-01","2014-01-01","2016-01-01", "2018-01-01","2020-01-01", "2022-01-01")),
-    labels = c("2006","2008","2010","2012","2014","2016", "2018","2020","2022")) + 
+  scale_x_date(breaks = as.Date(c("2006-01-01", "2008-01-01","2010-01-01",
+                                  "2012-01-01","2014-01-01","2016-01-01", "2018-01-01","2020-01-01",
+                                  "2022-01-01")),
+               labels = c("2006","2008","2010","2012","2014","2016", "2018","2020","2022")) + 
   labs(x = "Year",
-    y = "Percentage Change (%)") +
+    y = "Percentage Change (%)",
+    caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal(base_size = 12) +
   theme(text = element_text(color = "black"),
     axis.text = element_text(color = "black"),
     axis.title = element_text(face = "bold", color = "black"),
     plot.title = element_text(face = "bold", color = "black"),
     panel.grid.major = element_blank(),
-    panel.grid.major.x = element_line())
+    panel.grid.major.x = element_line(),
+    plot.caption = element_text(size = 8, color = "gray40"))
 
 year_over_year
 
-#ggsave(filename = "year_over_year.jpeg", plot = year_over_year, device = "jpeg", width = 8, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_9.jpeg", plot = year_over_year, device = "jpeg", width = 8, height = 4, dpi = 300)
 
 ```
 
@@ -634,14 +660,17 @@ PPPMonthBar <- ggplot(MonthlyMeanPPP, aes(x = Month, y = mean_PPP)) +
   geom_errorbar(aes(ymin = mean_PPP - SD_MeanPrice, ymax = mean_PPP + SD_MeanPrice), width = 0.2) +
   #ggtitle("Mean Soft-Shell Landing Price per Pound by Month (2006–2023)") + 
   ylab("Price per Pound \n(2023 FPI-adj)") + xlab("") + 
+  labs(caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   geom_text(aes(y = mean_PPP - SD_MeanPrice - 0.2, label = round(mean_PPP, 2)), size = 3, vjust = 0.75) +
   theme_minimal() +
   theme(panel.grid.major = element_blank(),
-    panel.grid.major.x = element_line())
+        panel.grid.major.x = element_line(),
+        plot.caption = element_text(size = 8, color = "gray40"))
 
 PPPMonthBar
 
-#ggsave(filename = "PPPMonthBar.jpeg", plot = PPPMonthBar, device = "jpeg", width = 8, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_12.jpeg", plot = PPPMonthBar, device = "jpeg", width = 8, height = 4, dpi = 300)
 ```
 
 ## Create Monthly FPI for Northern Quahogs
@@ -716,17 +745,19 @@ monthlyFPI_price <- ggplot(long_data, aes(x = year_month, y = Value, color = Typ
   geom_line(size = 0.25, color = gmri_cols("gmri blue")) + geom_point(size = 0.5, color = "#b94a40") +
   labs(#title = "Monthly FPI by Price: 2006-2023",
        x = "Year",
-       y = "FPI-adjusted Monthly Mean Price \n(Base Year = December 2023)") +
+       y = "FPI-adjusted Monthly Mean Price \n(Base Year = December 2023)",
+       caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
    scale_x_date(
     breaks = scales::date_breaks("2 years"),
     labels = scales::date_format("%Y")) +
-  theme_minimal() + theme(legend.position = "none") 
+  theme_minimal() +
+  theme(legend.position = "none", plot.caption = element_text(size = 8, color = "gray40")) 
 
 monthlyFPI_price
 
 # Save the plot as a JPEG file
-setwd("C:/Users/BenCotton/Desktop")
-#ggsave(filename = "MontlyFPI_price.jpeg", plot = monthlyFPI_price, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_13.jpeg", plot = monthlyFPI_price, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 ```
 
@@ -747,17 +778,19 @@ monthlyFPI_price_NQ <- ggplot(long_data_NQ, aes(x = year_month, y = Value, color
   geom_line(size = 0.25, color = "#495057") + geom_point(size = 0.5, color = "#00b4d8") +
   labs(#title = "Monthly FPI by Price: 2010-2023",
        x = "Year",
-       y = "FPI-adjusted Monthly Mean Price \n(Base Year = December 2023)") +
+       y = "FPI-adjusted Monthly Mean Price \n(Base Year = December 2023)",
+       caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
    scale_x_date(
     breaks = scales::date_breaks("1 year"),
     labels = scales::date_format("%Y")) +
-  theme_minimal() + theme(legend.position = "none") 
+  theme_minimal() + 
+  theme(legend.position = "none", plot.caption = element_text(size = 8, color = "gray40")) 
 
 monthlyFPI_price_NQ
 
 # Save the plot as a JPEG file
-setwd("C:/Users/BenCotton/Desktop")
-#ggsave(filename = "MonthlyFPI_price_NQ.jpeg", plot = monthlyFPI_price_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_14.jpeg", plot = monthlyFPI_price_NQ, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 ```
 
@@ -816,7 +849,8 @@ yearlyFPI_price <- ggplot(STYearFPI, aes(x = Year, y = fpiprice, color = Region)
   labs(#title = "Yearly Fish Price Index: 2006-2023",
     x = "Year",
     y = "FPI-adjusted Yearly Mean Price \n(Base Year = 2024)",
-    color = "Region") +
+    color = "Region",
+    caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   scale_y_continuous(limits = c(1, 4)) +
   scale_color_manual(
     values = c(
@@ -826,13 +860,14 @@ yearlyFPI_price <- ggplot(STYearFPI, aes(x = Year, y = fpiprice, color = Region)
   scale_x_continuous(
     breaks = seq(2006, 2024, by = 2),
     labels = as.character(seq(2006, 2024, by = 2))) +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.caption = element_text(size = 8, color = "gray40")) 
 
 yearlyFPI_price
 
 # Save the plot as a JPEG file
-setwd("C:/Users/BenCotton/Desktop")
-#ggsave(filename = "yearlyFPI_price.jpeg", plot = yearlyFPI_price, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_16.jpeg", plot = yearlyFPI_price, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 ```
 
@@ -922,14 +957,17 @@ softshellPPP <- ggplot(data, aes(x = Date, y = Price_Per_Pound)) +
 softshellPPP
 
 # Combine Plots into One Figure 
-combined_SS <- softshellts / softshellPPP  
+combined_SS <- softshellts / softshellPPP +
+  labs(caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
+  theme(plot.caption = element_text(size = 8, color = "gray40")) 
   #+ plot_annotation(title = 'Monthly Soft-Shell Clam Time Series Data: 2006-2023', theme = theme(plot.title = element_text(hjust = 0.5)))
 
 
 combined_SS
 
 # Save the plot as a JPEG file
-#ggsave(filename = "combined_SS.jpeg", plot = combined_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_15.jpeg", plot = combined_SS, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 ```
 
@@ -1197,7 +1235,8 @@ intraannual_yr <- ggplot(intra_annual_volatility_all_years,
             color = "black") +
   labs(title = "Intra-Annual Volatility (Within-Year)",
        x = "Year",
-       y = "Volatility (SD / Mean Price)") +
+       y = "Volatility (SD / Mean Price)",
+       caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   scale_fill_gradient(
     low = "#f7c6c6",
     high = "#b94a40") +
@@ -1209,9 +1248,10 @@ intraannual_yr <- ggplot(intra_annual_volatility_all_years,
     axis.title = element_text(face = "bold", color = "black"),
     plot.title = element_text(face = "bold", color = "black"),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()) +
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(size = 8, color = "gray40")) +
   coord_flip(clip = "off") +
-  geom_label(aes(x = "2022",  # Match x-axis factor label for placement
+  geom_label(aes(x = "2022",  
                  y = max(volatility) + 0.02),
              label = "Metric:\n < 0.13 (Low Volatility)\n 0.13–0.20\n 0.20–0.30\n 0.30–0.85\n > 0.85 (High Volatility)",
              hjust = 0,
@@ -1224,7 +1264,8 @@ intraannual_yr <- ggplot(intra_annual_volatility_all_years,
 
 intraannual_yr
 
-#ggsave(filename = "intraannual_yr_flipped.jpeg", plot = intraannual_yr, device = "jpeg", width = 8, height = 6, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_17.jpeg", plot = intraannual_yr, device = "jpeg", width = 8, height = 6, dpi = 300)
 
 ```
 
@@ -1449,12 +1490,16 @@ StormLandings <- ggplot(combined_landings, aes(x = Region, y = total_landings, f
   labs(#title = "Landings by Region and Storm Status",
        x = "Region", 
        y = "Total Weekly Landings (lbs)", 
+       caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute",
        fill = "Storm Status") +  
-  theme_bw()
+  theme_bw() + 
+  theme(plot.caption = element_text(size = 8, color = "gray40"))
 
 StormLandings
+
 # Save the plot as a JPEG file
-ggsave(filename = "StormLandings.jpeg", plot = StormLandings, device = "jpeg", width = 6, height = 4, dpi = 300)
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave(filename = "Figure_19.jpeg", plot = StormLandings, device = "jpeg", width = 6, height = 4, dpi = 300)
 
 
 ```
@@ -1541,7 +1586,6 @@ tidaldataraw <- read_csv("tidaldataraw.csv")
 
 ```{r}
 # Try only Using Seasonal Landings & Raw Data 
-library(splines)
 summertides <- tidaldataraw %>% 
   filter(month(Dates) %in% 7:10) %>% 
   mutate(Dates = floor_date(Dates, unit = "week", week_start = 7)) %>%
@@ -1657,22 +1701,27 @@ tidehisto_summer <- tideheights_summer %>%
     legend.text = element_text(size = 20),
     legend.title = element_text(size = 22))
 
-tidehisto
+tidehisto_summer
 
 # Combine plots with patchwork
 Combined_Plot_Summer <- summerplot / tidehisto_summer + 
   plot_layout(heights = c(2, 1)) + 
-  plot_annotation(title = "Estimated Trend of Summer Landings over Mean Low Water \nUsing Natural Splines (df = 3)",
-  theme = theme(plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
-                theme(axis.text = element_text(size = 20),
-                      axis.title = element_text(size = 22),
-                      strip.text = element_text(size = 22),
-                      legend.text = element_text(size = 20),
-                      legend.title = element_text(size = 22))))
+  labs(caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
+  plot_annotation(
+    title = "Estimated Trend of Summer Landings over Mean Low Water \nUsing Natural Splines (df = 3)",
+    theme = theme(
+      plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
+      plot.caption = element_text(size = 8, color = "gray40"),
+      axis.text = element_text(size = 20),
+      axis.title = element_text(size = 22),
+      strip.text = element_text(size = 22),
+      legend.text = element_text(size = 20),
+      legend.title = element_text(size = 22)))
 
 Combined_Plot_Summer
 
-ggsave("Combined_Plot_Summer.png", Combined_Plot_Summer, width = 15, height = 12, dpi = 300, bg = "white")
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+ggsave("Figure_18.png", Combined_Plot_Summer, width = 15, height = 12, dpi = 300, bg = "white")
 
 ```
 
@@ -1785,18 +1834,21 @@ p1 <- ggplot(closures_per_year, aes(x = factor(Year), y = Closures)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
   labs(title = "Number of Shellfish Area Closures Per Year (2014-2024)",
     x = "Year",
-    y = "Number of Closures") +
+    y = "Number of Closures",
+    caption = "Copyright 2026 by Coastal & Marine Economics Lab, Gulf of Maine Research Institute") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid.major.x = element_blank())
+        panel.grid.major.x = element_blank(),
+        plot.caption = element_text(size = 8, color = "gray40"))
 
 print(p1)
 
-#ggsave("yearly_closures.png", p1, width = 6, height = 4, dpi = 300, bg = "white")
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave("Figure_20.png", p1, width = 6, height = 4, dpi = 300, bg = "white")
 
 ```
 
-### Figure 21: Changes in Seasonal Timing of Closures: 2014-2024
+### Changes in Seasonal Timing of Closures: 2014-2024
 
 ```{r}
 # Generate Seasonal Variable 
@@ -1840,11 +1892,12 @@ p2 <- seasonal_props %>%
 
 print(p2)
 
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
 #ggsave("seasonal_props.png", p2, width = 6, height = 4, dpi = 300, bg = "white")
 
 ```
 
-### Stacked Bar Chart for Seasonal Count of Closures 
+### Figure 21: Stacked Bar Chart for Seasonal Count of Closures 
 
 ```{r}
 seasonal_props_count <- closures_expanded %>%
@@ -1875,15 +1928,18 @@ p3 <- ggplot(seasonal_props_count, aes(x = Year, y = Closures, fill = Season)) +
   labs(title = "Changes in Seasonal Timing of Closures: 2014-2024",
     x = "",
     y = "Number of Closures",
+    caption = "Stacked bar chart showing seasonal distribution",
     fill = "Season") +
   theme_minimal() +
   theme(plot.title = element_text(size = 14, face = "bold"),
-    legend.position = "right",
-    axis.text.x = element_text(angle = 45, hjust = 1))
+        legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.caption = element_text(size = 8, color = "gray40"))
 
 p3
 
-#ggsave("seasonal_closures.png", p3, width = 6, height = 4, dpi = 300, bg = "white")
+setwd("C:/Users/BenCotton/Desktop/DMR_TechReport_Figures")
+#ggsave("Figure_21.png", p3, width = 6, height = 4, dpi = 300, bg = "white")
 
 ```
 
