@@ -5,4 +5,4 @@ The final report is available from [https://github.com/gulfofmaine/me-shellfish-
 
 All the figures included in the final report are available from the folder titled "DMR_TechReport_Figures". 
 
-If you have any questions, please contact [Coastal and Marine economics Lab] (https://gmri.org/commitments/science/coastal-and-marine-economics/) at the Gulf of Maine Research Institute. 
+If you have any questions, please contact [Coastal and Marine economics Lab](https://gmri.org/commitments/science/coastal-and-marine-economics/) at the Gulf of Maine Research Institute. 
